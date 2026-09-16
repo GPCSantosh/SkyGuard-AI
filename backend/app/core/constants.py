@@ -17,3 +17,7 @@ DEFAULT_SAMPLING_INTERVAL_SECONDS: int = 300
 
 # Earth mean radius in kilometers for Haversine geodesic calculations
 EARTH_RADIUS_KM: float = 6371.0088
+
+# Numerical epsilon for division stability
+EPSILON: float = 1e-6
+
