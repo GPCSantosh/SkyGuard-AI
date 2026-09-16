@@ -82,5 +82,19 @@ Inspect current status of the streaming replay simulator.
 
 #### `POST /api/v1/replay/step`
 Execute a synchronous simulation step forward across queued historical observations.
-- **Query Params**: `steps` (default: 1)
-- **Response**: `list[ProcessingResult]`
+- **Query Params**: `count` (default: 1)
+- **Response**: `dict` containing steps executed, total emitted, and result summaries.
+
+---
+
+### 2.6. Advisory Correction Recommendations Endpoints (`/corrections`)
+
+#### `GET /api/v1/corrections`
+Query model-derived advisory correction recommendations for human-in-the-loop review.
+- **Query Params**: `station_id`, `status`, `target_variable`, `limit` (1..500), `offset` (0..)
+- **Response**: `PaginatedResponse[CorrectionRecommendation]`
+
+#### `GET /api/v1/corrections/{observation_id}`
+Retrieve granular audit details for a specific correction recommendation.
+- **Response**: `CorrectionRecommendation`
+

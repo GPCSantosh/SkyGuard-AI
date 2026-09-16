@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Optional
 from backend.app.core.database import DatabaseRepository
 from backend.app.core.engine import RealTimeProcessingEngine
@@ -64,4 +65,43 @@ def get_replay_engine() -> StreamReplayEngine:
     global _replay_engine
     if _replay_engine is None:
         _replay_engine = StreamReplayEngine()
+        # Seed replay engine with multi-station chronological observations
+        import pandas as pd
+        topo = get_default_topology()
+        records = []
+        base_time = pd.Timestamp("2026-09-17 00:00:00", tz="UTC")
+        for step in range(30):
+            t = base_time + pd.Timedelta(minutes=5 * step)
+            for idx, (s_id, node) in enumerate(topo.stations.items()):
+                # Baseline smooth diurnal cycle
+                t_val = 25.0 + 5.0 * math.sin(step / 6.0) + (idx * 0.4)
+                h_val = 60.0 - 10.0 * math.sin(step / 6.0) - (idx * 0.2)
+                p_val = 1013.25 - (node.elevation_m / 8.0)
+                records.append({
+                    "station_id": s_id,
+                    "timestamp": t.isoformat(),
+                    "latitude": node.latitude,
+                    "longitude": node.longitude,
+                    "elevation": node.elevation_m,
+                    "temperature_c": t_val,
+                    "relative_humidity_pct": h_val,
+                    "sea_level_pressure_hpa": p_val,
+                })
+        df = pd.DataFrame(records)
+        _replay_engine.load_from_dataframe(df)
+
+        # Inject a couple of realistic anomalies for demonstration
+        if records:
+            _replay_engine.register_injected_anomaly(
+                station_id="42182099999",
+                timestamp=(base_time + pd.Timedelta(minutes=15)).isoformat(),
+                anomaly_type="SPIKE",
+                corrupted_values={"temperature": 52.0},
+            )
+            _replay_engine.register_injected_anomaly(
+                station_id="42181099999",
+                timestamp=(base_time + pd.Timedelta(minutes=25)).isoformat(),
+                anomaly_type="FROZEN_SENSOR",
+                corrupted_values={"humidity": 5.0},
+            )
     return _replay_engine

@@ -1,0 +1,203 @@
+import React, { useState, useMemo } from 'react';
+import { useStations, useStationHistory } from '../hooks/useStations';
+import { useAnomalies } from '../hooks/useAnomalies';
+import { WeatherTrendChart, TimeSeriesPoint } from '../components/WeatherTrendChart';
+import { MetricTable, ColumnDef } from '../components/MetricTable';
+import { AnomalyEventRecord } from '../types/api';
+import { SeverityBadge } from '../components/SeverityBadge';
+import { History, Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+export const HistoricalAnalysisPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { data: stations = [] } = useStations();
+  const [selectedStationId, setSelectedStationId] = useState<string>('AWS_001');
+  const [timeRange, setTimeRange] = useState<string>('24h');
+  const [limit, setLimit] = useState<number>(200);
+
+  const { data: historyData } = useStationHistory(selectedStationId, { limit });
+  const { data: anomaliesData, isLoading: isLoadingAnomalies } = useAnomalies({
+    stationId: selectedStationId,
+    limit: 50,
+  });
+
+  const { tempData, humData, presData } = useMemo(() => {
+    const temp: TimeSeriesPoint[] = [];
+    const hum: TimeSeriesPoint[] = [];
+    const pres: TimeSeriesPoint[] = [];
+
+    if (historyData?.items) {
+      historyData.items.forEach((obs) => {
+        temp.push({ timestamp: obs.timestamp, raw: obs.temperature, imputed: null });
+        hum.push({ timestamp: obs.timestamp, raw: obs.humidity, imputed: null });
+        pres.push({ timestamp: obs.timestamp, raw: obs.pressure, imputed: null });
+      });
+    }
+
+    return { tempData: temp, humData: hum, presData: pres };
+  }, [historyData]);
+
+  const anomalyColumns: ColumnDef<AnomalyEventRecord>[] = [
+    {
+      key: 'event_id',
+      header: 'Event ID',
+      render: (ev) => (
+        <span className="font-mono font-semibold text-slate-100">{ev.event_id}</span>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'timestamp',
+      header: 'Timestamp (UTC)',
+      render: (ev) => (
+        <span className="font-mono text-slate-300">
+          {new Date(ev.timestamp).toISOString().replace('T', ' ').substring(0, 19)}Z
+        </span>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'decision',
+      header: 'Decision',
+      render: (ev) => <span className="font-mono text-ops-weather">{ev.decision}</span>,
+      sortable: true,
+    },
+    {
+      key: 'severity',
+      header: 'Severity',
+      align: 'center',
+      render: (ev) => <SeverityBadge severity={ev.severity} />,
+      sortable: true,
+    },
+    {
+      key: 'explanation_summary',
+      header: 'Summary',
+      render: (ev) => (
+        <span className="text-data text-slate-300 line-clamp-1 max-w-md">
+          {ev.explanation_summary}
+        </span>
+      ),
+    },
+    {
+      key: 'action',
+      header: '',
+      align: 'right',
+      render: (ev) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/anomalies/${ev.event_id}`);
+          }}
+          className="text-[11px] font-mono text-ops-weather hover:underline"
+        >
+          Investigate &rarr;
+        </button>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Header & Filter Controls */}
+      <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <History className="w-5 h-5 text-ops-weather" />
+          <div>
+            <h1 className="text-h1 font-bold font-mono text-slate-100">
+              Historical Telemetry & Anomaly Analysis
+            </h1>
+            <span className="text-[11px] font-mono text-slate-400">
+              High-resolution time-series drilldown and historical anomaly correlations
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-data">
+            <span className="text-[11px] font-mono text-slate-400">Station:</span>
+            <select
+              value={selectedStationId}
+              onChange={(e) => setSelectedStationId(e.target.value)}
+              className="bg-surface-2 border border-border text-slate-200 rounded px-2.5 py-1 text-data font-mono focus:outline-none"
+            >
+              {stations.map((s) => (
+                <option key={s.station_id} value={s.station_id}>
+                  {s.station_id} — {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-data">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={timeRange}
+              onChange={(e) => {
+                setTimeRange(e.target.value);
+                setLimit(e.target.value === '24h' ? 200 : e.target.value === '7d' ? 500 : 1000);
+              }}
+              className="bg-surface-2 border border-border text-slate-200 rounded px-2.5 py-1 text-data font-mono focus:outline-none"
+            >
+              <option value="24h">Window: Last 24 Hours</option>
+              <option value="7d">Window: Last 7 Days</option>
+              <option value="30d">Window: Last 30 Days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Synchronized Charts: Full-Width Primary + 2 Secondary */}
+      <div className="space-y-3">
+        <WeatherTrendChart
+          title={`${selectedStationId} — Primary Temperature Sequence`}
+          unit="°C"
+          data={tempData}
+          color="#38BDF8"
+          syncId="history-sync"
+          height={240}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <WeatherTrendChart
+            title="Relative Humidity Sequence"
+            unit="%"
+            data={humData}
+            color="#34D399"
+            syncId="history-sync"
+            height={180}
+          />
+
+          <WeatherTrendChart
+            title="Barometric Pressure Sequence"
+            unit="hPa"
+            data={presData}
+            color="#818CF8"
+            syncId="history-sync"
+            height={180}
+          />
+        </div>
+      </div>
+
+      {/* Historical Anomaly Events Table */}
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-h2 font-semibold text-slate-100">
+            Detected Anomaly Events in Selected Time Window ({anomaliesData?.pagination.total_count ?? 0})
+          </h2>
+          <span className="text-[11px] font-mono text-slate-400">
+            Click row to drill into root cause and explanation
+          </span>
+        </div>
+
+        <MetricTable
+          columns={anomalyColumns}
+          data={anomaliesData?.items || []}
+          isLoading={isLoadingAnomalies}
+          rowIdKey="event_id"
+          onRowClick={(row) => navigate(`/anomalies/${row.event_id}`)}
+          emptyMessage="No anomaly events detected for this station in the specified window."
+        />
+      </div>
+    </div>
+  );
+};

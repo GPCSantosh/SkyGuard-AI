@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from backend.app.api.v1.endpoints.anomalies import router as anomalies_router
+from backend.app.api.v1.endpoints.corrections import router as corrections_router
 from backend.app.api.v1.endpoints.observations import router as observations_router
 from backend.app.api.v1.endpoints.replay import router as replay_router
 from backend.app.api.v1.endpoints.stations import router as stations_router
@@ -15,6 +16,7 @@ router = APIRouter()
 # Register sub-routers
 router.include_router(stations_router)
 router.include_router(anomalies_router)
+router.include_router(corrections_router)
 router.include_router(observations_router)
 router.include_router(system_router)
 router.include_router(replay_router)

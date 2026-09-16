@@ -37,6 +37,7 @@ class DatabaseRepository:
         self.latest_health_by_station: Dict[str, SensorHealthSummary] = {}
         self.health_history: List[SensorHealthSummary] = []
         self.corrections: Dict[str, CorrectionRecommendation] = {}  # key: observation_id
+        self.correction_order: List[str] = []
 
         # Counters & Startup Telemetry
         self.startup_time = datetime.now(timezone.utc)
@@ -78,6 +79,8 @@ class DatabaseRepository:
 
     def save_correction(self, corr: CorrectionRecommendation) -> None:
         """Persist advisory correction recommendation."""
+        if corr.observation_id not in self.corrections:
+            self.correction_order.append(corr.observation_id)
         self.corrections[corr.observation_id] = corr
 
     def record_latency(self, latency_ms: float) -> None:
@@ -254,6 +257,40 @@ class DatabaseRepository:
     def get_anomaly_explanation(self, event_id: str) -> Optional[ExplanationSummary]:
         """Get complete explainability package for an anomaly event."""
         return self.explanations.get(event_id)
+
+    def get_corrections(
+        self,
+        station_id: Optional[str] = None,
+        status: Optional[str] = None,
+        target_variable: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Tuple[List[CorrectionRecommendation], int]:
+        """Query advisory correction recommendations with filters and pagination."""
+        stn_filter = station_id if isinstance(station_id, str) and station_id.strip() else None
+        status_filter = status if isinstance(status, str) and status.strip() else None
+        var_filter = target_variable if isinstance(target_variable, str) and target_variable.strip() else None
+        lim = limit if isinstance(limit, int) else 50
+        off = offset if isinstance(offset, int) else 0
+
+        matched: List[CorrectionRecommendation] = []
+        for obs_id in reversed(self.correction_order):
+            corr = self.corrections[obs_id]
+            if stn_filter and corr.station_id != stn_filter:
+                continue
+            if status_filter and corr.status.value != status_filter and corr.status != status_filter:
+                continue
+            if var_filter and corr.target_variable != var_filter:
+                continue
+            matched.append(corr)
+
+        total_count = len(matched)
+        paginated = matched[off : off + lim]
+        return paginated, total_count
+
+    def get_correction_by_id(self, observation_id: str) -> Optional[CorrectionRecommendation]:
+        """Get single correction recommendation by observation ID."""
+        return self.corrections.get(observation_id)
 
     def get_system_health(self) -> SystemHealthStatus:
         """Compute end-to-end service status of all core subsystems."""

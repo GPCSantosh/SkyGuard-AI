@@ -13,15 +13,21 @@
   "dependencies": {
     "@tanstack/react-query": "^5.28.0",
     "clsx": "^2.1.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.22.3",
     "recharts": "^2.12.3",
     "tailwind-merge": "^2.2.2"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.8",
+    "@types/node": "^22.20.3",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
