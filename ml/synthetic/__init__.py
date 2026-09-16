@@ -12,6 +12,7 @@ from ml.synthetic.schema import (
     InjectedDatasetResult,
     SyntheticAnomalyType,
 )
+from ml.synthetic.spatial_scenarios import SpatialScenarioGenerator
 from ml.synthetic.stream_simulator import StreamSimulator
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "InjectedDatasetResult",
     "BaseAnomalyInjector",
     "SyntheticAnomalyEngine",
+    "SpatialScenarioGenerator",
     "StreamSimulator",
 ]

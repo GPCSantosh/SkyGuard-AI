@@ -1,0 +1,84 @@
+{
+  "question_1_local_corruption": {
+    "scenario": "Scenario A (Local Anomaly +6.0\u00b0C)",
+    "categories": {
+      "LOCAL_ONLY": 6
+    },
+    "avg_neighbor_similarity": 0.0,
+    "avg_delta_from_neighbor_mean": 5.917499999999997,
+    "avg_zscore": 31.535188907982988,
+    "demonstrates_low_agreement": true
+  },
+  "question_2_regional_event": {
+    "scenario": "Scenario B (Regional Squall / Front)",
+    "categories": {
+      "REGIONAL_PATTERN": 6
+    },
+    "avg_neighbor_similarity": 1.0,
+    "avg_coherence": 0.8805555555555555,
+    "demonstrates_high_agreement": true
+  },
+  "question_3_mixed_event": {
+    "scenario": "Scenario C (Regional Event + Local Fault)",
+    "categories": {
+      "LOCAL_ONLY": 5,
+      "REGIONAL_PATTERN": 1
+    },
+    "avg_delta_from_neighbor_mean": 7.06005466886445,
+    "distinguishes_target_excess": true
+  },
+  "question_4_temporal_tolerance": {
+    "10min": {
+      "avg_valid_neighbors": 4.0
+    },
+    "30min": {
+      "avg_valid_neighbors": 4.0
+    },
+    "60min": {
+      "avg_valid_neighbors": 4.0
+    },
+    "120min": {
+      "avg_valid_neighbors": 4.0
+    }
+  },
+  "question_5_distance_sensitivity": {
+    "25km": {
+      "configured_neighbors_for_delhi": 1
+    },
+    "50km": {
+      "configured_neighbors_for_delhi": 1
+    },
+    "150km": {
+      "configured_neighbors_for_delhi": 1
+    },
+    "600km": {
+      "configured_neighbors_for_delhi": 5
+    },
+    "1500km": {
+      "configured_neighbors_for_delhi": 5
+    }
+  },
+  "question_6_distance_weighting": {
+    "unweighted_mean": 22.085943908703744,
+    "idw_expected": 22.034580697981458,
+    "difference": 0.05136321072228611
+  },
+  "question_7_and_8_isolated_station": {
+    "categories": {
+      "INSUFFICIENT_CONTEXT": 6
+    },
+    "valid_neighbor_counts": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "correctly_flags_insufficient_context": true
+  },
+  "causality_test": {
+    "leakage_detected": false,
+    "causality_strictly_enforced": true
+  }
+}

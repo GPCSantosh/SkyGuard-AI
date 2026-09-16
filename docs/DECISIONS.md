@@ -58,3 +58,19 @@
 - **Context:** Weather does not stop at state or district borders. Two stations in different states 15 km apart share weather dynamics, whereas two stations in the same state 600 km apart may have entirely different microclimates.
 - **Decision:** Calculate spatial neighborhood matrices and spatial consistency checks using geodetic distance (Haversine/Vincenty on Latitude, Longitude, Elevation), completely ignoring political/state boundaries.
 - **Consequences:** Maximizes physical meteorological validity in spatial consistency validation.
+
+---
+
+## ADR-007: Spatial Context as Non-Probabilistic Contextual Evidence
+- **Status:** Accepted
+- **Context:** Spatial neighborhood agreement provides essential corroboration for anomalous observations, but cannot alone prove hardware failure or true weather without multi-variable physics and temporal history. Representing consensus metrics as "probabilities" introduces uncalibrated overconfidence.
+- **Decision:** The Spatial & Synoptic Context Engine outputs structured contextual evidence (`LOCAL_ONLY`, `LOCAL_CLUSTER`, `REGIONAL_PATTERN`, `INSUFFICIENT_CONTEXT`) and statistical metrics (Z-scores, similarity ratios, IDW expected values) rather than final anomaly labels or uncalibrated probabilities.
+- **Consequences:** Provides clean, transparent, interpretable evidence inputs for the Phase 5 Hybrid Decision Arbiter without conflating correlation with causation.
+
+---
+
+## ADR-008: Causal Neighbor Alignment with Strict Forward-Time Exclusion
+- **Status:** Accepted
+- **Context:** Real-time meteorological operations cannot look into the future. A spatial engine that evaluates station $S$ at time $T$ using neighbor observations from $T + \Delta t$ creates temporal leakage and unrealistic benchmark performance.
+- **Decision:** In operational/real-time mode, neighbor observations are strictly filtered such that $t_{\text{neighbor}} \le t_{\text{target}}$. Stale observations older than the configured temporal tolerance window are excluded from consensus statistics.
+- **Consequences:** Guarantees zero data leakage and ensures seamless transition from historical backtesting to real-time streaming operations.

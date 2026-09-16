@@ -34,8 +34,8 @@ Pure machine learning alone can fail on meteorological edge cases, and determini
 - **RollingZScoreDetector** (`ml/models/baselines.py`): Dynamic temporal window standard score residual detector with min-periods and variance floor safeguards.
 - **IsolationForestDetector** (`ml/models/isolation_forest.py`): Multi-dimensional scikit-learn isolation forest wrapped in `BaseAnomalyModel` with sanitized input feature vectors, continuous normalized anomaly scores in $[0, 1]$, and validation quantile threshold calibration.
 
-### 3.2. Future Pipeline Stages (Phase 4 & 5)
-- **Stage 2: Spatial Topographic Consensus Engine (Phase 4)**: Cross-AWS neighbor correlation and elevation-adjusted IDW verification to separate genuine severe weather from hardware failures.
+### 3.2. Context & Future Pipeline Stages (Phase 4 & Phase 5)
+- **Stage 2: Spatial & Synoptic Context Engine (Phase 4 — COMPLETED)**: Implemented in `ml/spatial/` (`SpatialNetworkTopology`, `SpatialContextEngine`). Computes geodesic neighbor deltas, directional consensus metrics, IDW baselines, and context categories (`LOCAL_ONLY`, `LOCAL_CLUSTER`, `REGIONAL_PATTERN`, `INSUFFICIENT_CONTEXT`) under strict causal alignment.
 - **Stage 3: Hybrid Root-Cause Decision Engine (Phase 5)**: Rule-augmented classifier mapping multi-model anomaly signals to the 15-category taxonomy.
 - **Stage 4: Explainability (Phase 5)**: TreeSHAP local feature attributions and sensor health indexing.
 

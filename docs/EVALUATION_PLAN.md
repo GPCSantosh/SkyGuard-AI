@@ -51,17 +51,27 @@ Phase 3 establishes an anti-leakage evaluation harness:
 
 ---
 
-## 5. Benchmark Execution Commands
-To execute the baseline benchmark, ablation study, and stability verification:
+## 5. Spatial & Synoptic Evaluation Framework (Phase 4)
+Phase 4 extends evaluation to multi-station spatial context:
+- **Spatial Scenarios (A, B, C, D)**: `SpatialScenarioGenerator` in `ml/synthetic/spatial_scenarios.py` evaluates single-station local corruption (A), coherent regional weather events (B), mixed regional events + sensor faults (C), and isolated station outages (D).
+- **Spatial Consensus Benchmarks**: `ml/experiments/run_spatial_evaluation.py` benchmarks all 8 evaluation questions, temporal sensitivity, distance sensitivity, IDW vs unweighted consensus, and zero forward-time leakage.
+
+---
+
+## 6. Benchmark Execution Commands
+To execute the baseline benchmark, ablation study, and spatial evaluation:
 
 ```bash
 # 1. Main Baseline Experiment (Fixed Threshold, Rolling Z-Score, Isolation Forest)
 python -m ml.experiments.runner --dataset data/processed/42182099999_2024_normalized.csv --seed 42
 
-# 2. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
+# 2. Phase 4 Spatial & Synoptic Context Engine Evaluation
+python -m ml.experiments.run_spatial_evaluation
+
+# 3. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
 python -c "from ml.experiments.ablation import run_ablation_study; run_ablation_study('data/processed/42182099999_2024_normalized.csv')"
 
-# 3. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
+# 4. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
 python -c "from ml.experiments.stability import run_multi_seed_stability; run_multi_seed_stability('data/processed/42182099999_2024_normalized.csv')"
 ```
 

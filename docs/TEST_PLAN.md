@@ -72,12 +72,23 @@ In this phase, tests verify:
 
 ---
 
-## 7. Test Commands
+## 7. Phase 4 Test Suite (Spatial & Synoptic Context Engine)
+Phase 4 tests verify:
+- **`test_spatial_topology.py`**: Exact geodesic Haversine distance, initial compass bearing (forward azimuth $0^\circ-360^\circ$), elevation differences, YAML network graph parsing, and JSON serialization round-trip.
+- **`test_spatial_engine.py`**: Temporal alignment within configurable window, stale data exclusion, barometric sea-level pressure normalization, statistical consensus metrics (mean, median, std, min, max, z-score, similarity ratios), IDW distance weighting, and cross-variable multi-sensor coherence.
+- **`test_spatial_scenarios.py`**: Multi-station scenario validation covering Local Sensor Anomaly (A -> `LOCAL_ONLY`), Regional Weather Event (B -> `REGIONAL_PATTERN`), Mixed Regional Event + Sensor Fault (C -> Target Departure isolated), and Isolated Station Outage (D -> `INSUFFICIENT_CONTEXT`).
+- **`test_spatial_edge_cases.py`**: Zero configured neighbors, single neighbor, missing neighbor values, duplicate station coordinates, extreme inter-station distances, all-identical neighbor readings (zero variance), and robust outlier neighbor resilience.
+
+---
+
+## 8. Test Commands
 ```bash
-# Run full unit test suite (Phases 0, 1, 2, 3)
+# Run full unit test suite (Phases 0, 1, 2, 3, 4)
 pytest -v tests/unit/
+
+# Run specific Phase 4 spatial context tests
+pytest -v tests/unit/test_spatial_topology.py tests/unit/test_spatial_engine.py tests/unit/test_spatial_scenarios.py tests/unit/test_spatial_edge_cases.py
 
 # Run specific Phase 3 baseline & anti-leakage tests
 pytest -v tests/unit/test_leakage.py tests/unit/test_isolation_forest.py tests/unit/test_models_baselines.py tests/unit/test_evaluation_metrics.py tests/unit/test_feature_registry.py tests/unit/test_phase3_edge_cases.py
 ```
-
