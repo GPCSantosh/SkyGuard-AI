@@ -1,188 +1,261 @@
-# SkyGuard AI — Initial Target Station Network Topology (Sample ~20 Stations across India)
-# Spatial comparison uses latitude/longitude geodetic distance, not state name.
+# SkyGuard AI — Target Station Network Topology (23 Verified Stations across India)
+# Spatial comparison uses latitude/longitude geodetic distance, not state boundaries.
 
 network:
-  network_name: "India AWS Observation Network"
-  network_code: "IND_AWS_NET"
-  total_configured_stations: 20
+  network_name: "India Meteorological Observation Network (NOAA ISD / WMO)"
+  network_code: "IND_WMO_NET"
+  total_configured_stations: 23
 
 stations:
-  - station_id: "AWS_IND_DL_001"
+  - station_id: "42182099999"
+    wmo_id: "42182"
     name: "New Delhi Safdarjung"
-    latitude: 28.5847
-    longitude: 77.2060
-    elevation: 216.0
+    latitude: 28.5845
+    longitude: 77.2058
+    elevation: 214.9
     state: "Delhi"
-    sampling_interval_seconds: 300
+    climate_zone: "Composite / Gangetic Plain"
+    sampling_interval_seconds: 10800  # 3-hourly synoptic
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_DL_002"
-    name: "New Delhi Palam"
+  - station_id: "42181099999"
+    wmo_id: "42181"
+    name: "New Delhi IGI Airport (Palam)"
     latitude: 28.5665
     longitude: 77.1031
     elevation: 237.0
     state: "Delhi"
-    sampling_interval_seconds: 300
+    climate_zone: "Composite / Gangetic Plain"
+    sampling_interval_seconds: 1800   # 30-minute METAR AWS
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_MH_001"
-    name: "Mumbai Colaba"
-    latitude: 18.9067
-    longitude: 72.8147
-    elevation: 11.0
-    state: "Maharashtra"
-    sampling_interval_seconds: 300
-    status: "ACTIVE"
-
-  - station_id: "AWS_IND_MH_002"
-    name: "Mumbai Santacruz"
-    latitude: 19.0896
-    longitude: 72.8656
+  - station_id: "43003099999"
+    wmo_id: "43003"
+    name: "Mumbai Santacruz Airport"
+    latitude: 19.1167
+    longitude: 72.8500
     elevation: 14.0
     state: "Maharashtra"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Wet & Dry / Coastal"
+    sampling_interval_seconds: 1800   # 30-minute METAR AWS
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_MH_003"
-    name: "Pune Shivajinagar"
-    latitude: 18.5314
-    longitude: 73.8446
-    elevation: 559.0
+  - station_id: "43057099999"
+    wmo_id: "43057"
+    name: "Mumbai Colaba"
+    latitude: 18.9000
+    longitude: 72.8167
+    elevation: 11.0
     state: "Maharashtra"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Wet & Dry / Coastal"
+    sampling_interval_seconds: 10800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_KA_001"
-    name: "Bengaluru City"
-    latitude: 12.9716
-    longitude: 77.5946
-    elevation: 920.0
-    state: "Karnataka"
-    sampling_interval_seconds: 300
+  - station_id: "43063099999"
+    wmo_id: "43063"
+    name: "Pune"
+    latitude: 18.5333
+    longitude: 73.8500
+    elevation: 560.0
+    state: "Maharashtra"
+    climate_zone: "Tropical Semi-Arid / Deccan Plateau"
+    sampling_interval_seconds: 10800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_KA_002"
+  - station_id: "43295099999"
+    wmo_id: "43295"
     name: "Bengaluru HAL Airport"
     latitude: 12.9500
-    longitude: 77.6681
+    longitude: 77.6667
     elevation: 888.0
     state: "Karnataka"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Semi-Arid / Deccan Plateau"
+    sampling_interval_seconds: 10800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_TN_001"
-    name: "Chennai Nungambakkam"
-    latitude: 13.0604
-    longitude: 80.2496
-    elevation: 16.0
-    state: "Tamil Nadu"
-    sampling_interval_seconds: 300
-    status: "ACTIVE"
-
-  - station_id: "AWS_IND_TN_002"
-    name: "Chennai Meenambakkam"
+  - station_id: "43279099999"
+    wmo_id: "43279"
+    name: "Chennai Meenambakkam Airport"
     latitude: 12.9941
     longitude: 80.1809
     elevation: 16.0
     state: "Tamil Nadu"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Wet & Dry / Coastal"
+    sampling_interval_seconds: 1800   # 30-minute METAR AWS
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_WB_001"
-    name: "Kolkata Alipore"
-    latitude: 22.5333
-    longitude: 88.3333
-    elevation: 6.0
-    state: "West Bengal"
-    sampling_interval_seconds: 300
-    status: "ACTIVE"
-
-  - station_id: "AWS_IND_WB_002"
-    name: "Kolkata Dum Dum"
-    latitude: 22.6547
-    longitude: 88.4467
+  - station_id: "42809099999"
+    wmo_id: "42809"
+    name: "Kolkata Dum Dum (NSCBI Airport)"
+    latitude: 22.6500
+    longitude: 88.4500
     elevation: 5.0
     state: "West Bengal"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Wet & Dry / Coastal Delta"
+    sampling_interval_seconds: 1800   # 30-minute METAR AWS
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_TS_001"
+  - station_id: "43128099999"
+    wmo_id: "43128"
     name: "Hyderabad Begumpet"
-    latitude: 17.4435
-    longitude: 78.4682
+    latitude: 17.4500
+    longitude: 78.4667
     elevation: 531.0
     state: "Telangana"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Semi-Arid / Deccan Plateau"
+    sampling_interval_seconds: 1800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_GJ_001"
+  - station_id: "42647099999"
+    wmo_id: "42647"
     name: "Ahmedabad Airport"
-    latitude: 23.0734
-    longitude: 72.6266
+    latitude: 23.0667
+    longitude: 72.6333
     elevation: 55.0
     state: "Gujarat"
-    sampling_interval_seconds: 300
+    climate_zone: "Hot Semi-Arid"
+    sampling_interval_seconds: 1800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_RJ_001"
-    name: "Jaipur Sanganer"
-    latitude: 26.8289
-    longitude: 75.8056
-    elevation: 390.0
-    state: "Rajasthan"
-    sampling_interval_seconds: 300
+  - station_id: "42027099999"
+    wmo_id: "42027"
+    name: "Srinagar"
+    latitude: 34.0833
+    longitude: 74.8333
+    elevation: 1587.0
+    state: "Jammu & Kashmir"
+    climate_zone: "High Altitude / Montane Alpine"
+    sampling_interval_seconds: 10800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_KL_001"
-    name: "Thiruvananthapuram"
-    latitude: 8.4821
-    longitude: 76.9547
+  - station_id: "42867099999"
+    wmo_id: "42867"
+    name: "Nagpur Sonegaon"
+    latitude: 21.0922
+    longitude: 79.0600
+    elevation: 310.0
+    state: "Maharashtra"
+    climate_zone: "Tropical Semi-Arid / Central"
+    sampling_interval_seconds: 1800
+    status: "ACTIVE"
+
+  - station_id: "43192099999"
+    wmo_id: "43192"
+    name: "Goa Dabolim Airport"
+    latitude: 15.3800
+    longitude: 73.8300
+    elevation: 56.0
+    state: "Goa"
+    climate_zone: "Tropical Monsoon / Coastal"
+    sampling_interval_seconds: 10800
+    status: "ACTIVE"
+
+  - station_id: "43371099999"
+    wmo_id: "43371"
+    name: "Thiruvananthapuram Airport"
+    latitude: 8.4820
+    longitude: 76.9500
     elevation: 64.0
     state: "Kerala"
-    sampling_interval_seconds: 300
+    climate_zone: "Tropical Wet / Coastal"
+    sampling_interval_seconds: 10800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_KL_002"
-    name: "Kochi CIAL"
-    latitude: 10.1520
-    longitude: 76.3922
-    elevation: 10.0
-    state: "Kerala"
-    sampling_interval_seconds: 300
-    status: "ACTIVE"
-
-  - station_id: "AWS_IND_OD_001"
-    name: "Bhubaneswar"
-    latitude: 20.2525
-    longitude: 85.8178
-    elevation: 46.0
-    state: "Odisha"
-    sampling_interval_seconds: 300
-    status: "ACTIVE"
-
-  - station_id: "AWS_IND_AS_001"
-    name: "Guwahati Borjhar"
+  - station_id: "42410099999"
+    wmo_id: "42410"
+    name: "Guwahati Borjhar Airport"
     latitude: 26.1061
     longitude: 91.5859
-    elevation: 49.0
+    elevation: 54.0
     state: "Assam"
-    sampling_interval_seconds: 300
+    climate_zone: "Humid Subtropical"
+    sampling_interval_seconds: 1800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_UT_001"
-    name: "Dehradun"
-    latitude: 30.3165
-    longitude: 78.0322
-    elevation: 682.0
-    state: "Uttarakhand"
-    sampling_interval_seconds: 300
+  - station_id: "42314099999"
+    wmo_id: "42314"
+    name: "Dibrugarh Mohanbari"
+    latitude: 27.4833
+    longitude: 95.0167
+    elevation: 110.0
+    state: "Assam"
+    climate_zone: "Humid Subtropical / Northeast"
+    sampling_interval_seconds: 1800
     status: "ACTIVE"
 
-  - station_id: "AWS_IND_JK_001"
-    name: "Srinagar Airport"
-    latitude: 33.9872
-    longitude: 74.7744
-    elevation: 1587.0
-    state: "Jammu and Kashmir"
-    sampling_interval_seconds: 300
+  - station_id: "42754099999"
+    wmo_id: "42754"
+    name: "Indore"
+    latitude: 22.7200
+    longitude: 75.8000
+    elevation: 567.0
+    state: "Madhya Pradesh"
+    climate_zone: "Tropical Semi-Arid"
+    sampling_interval_seconds: 1800
+    status: "ACTIVE"
+
+  - station_id: "42101099999"
+    wmo_id: "42101"
+    name: "Patiala"
+    latitude: 30.3333
+    longitude: 76.4667
+    elevation: 251.0
+    state: "Punjab"
+    climate_zone: "Composite / Northwest Plain"
+    sampling_interval_seconds: 10800
+    status: "ACTIVE"
+
+  - station_id: "42339099999"
+    wmo_id: "42339"
+    name: "Jodhpur"
+    latitude: 26.2500
+    longitude: 73.0500
+    elevation: 224.0
+    state: "Rajasthan"
+    climate_zone: "Hot Arid / Desert"
+    sampling_interval_seconds: 1800
+    status: "ACTIVE"
+
+  - station_id: "42475099999"
+    wmo_id: "42475"
+    name: "Allahabad Bamrauli"
+    latitude: 25.4500
+    longitude: 81.7333
+    elevation: 98.0
+    state: "Uttar Pradesh"
+    climate_zone: "Humid Subtropical / Gangetic"
+    sampling_interval_seconds: 10800
+    status: "ACTIVE"
+
+  - station_id: "43369099999"
+    wmo_id: "43369"
+    name: "Minicoy Island"
+    latitude: 8.3000
+    longitude: 73.1500
+    elevation: 2.0
+    state: "Lakshadweep"
+    climate_zone: "Island Maritime"
+    sampling_interval_seconds: 10800
+    status: "ACTIVE"
+
+  - station_id: "43346099999"
+    wmo_id: "43346"
+    name: "Port Blair"
+    latitude: 11.6667
+    longitude: 92.7167
+    elevation: 16.0
+    state: "Andaman & Nicobar"
+    climate_zone: "Island Maritime"
+    sampling_interval_seconds: 10800
+    status: "ACTIVE"
+
+  - station_id: "42071099999"
+    wmo_id: "42071"
+    name: "Amritsar Rajasansi Airport"
+    latitude: 31.7100
+    longitude: 74.7970
+    elevation: 230.4
+    state: "Punjab"
+    climate_zone: "Composite / Northwest Border"
+    sampling_interval_seconds: 1800
     status: "ACTIVE"

@@ -10,14 +10,17 @@
 ```mermaid
 flowchart TB
     subgraph Ingestion_Layer["1. Ingestion & Connector Layer"]
+        NOAA[NOAA NCEI ISD Connector / Parser]
         CSV[Historical CSV Connector]
         SIM[Simulator Connector]
         API[Weather HTTP API Connector]
         MQTT[MQTT Telemetry Connector]
     end
 
-    subgraph Normalization_Layer["2. Normalization & Validation"]
-        Adapter[Data Adapter]
+    subgraph Normalization_Layer["2. Normalization, Meteorology & Profiling"]
+        NOAAParser[NOAA ISD Parser & Transformer]
+        MetUtils[Meteorology Engine\nAugust-Roche-Magnus RH & Pressure]
+        Profiler[Dataset Quality Profiler]
         NormObs[Normalized WeatherObservation]
         QC[Physics & Range Validation QC]
     end

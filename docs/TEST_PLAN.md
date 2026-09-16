@@ -36,7 +36,32 @@ In this foundation phase, tests verify:
 
 ---
 
-## 4. Test Commands
+## 4. Phase 1B Test Suite (NOAA ISD Ingestion, QC & Meteorology)
+In this phase, tests verify:
+- **`test_meteorology.py`**:
+  - August-Roche-Magnus Relative Humidity derivation across standard, hot-humid, arid desert, cold fog, and sub-zero winter scenarios.
+  - Clamping behavior when dew point exceeds air temperature.
+  - Sea-level to station pressure reduction and inverse hypsometric conversions.
+  - Multivariate physical consistency checks between $T$, $T_d$, and reported $RH$.
+- **`test_noaa_parser.py`**:
+  - Composite field splitting and scaling (`+0108,1` $\rightarrow 10.8^\circ\text{C}$, QC=`1`).
+  - Correct parsing of `TMP`, `DEW`, `SLP`, `STP`, `MA1`, `WND`.
+  - Quality control flag interpretation (`1` $\rightarrow$ `VALID`, `2` $\rightarrow$ `SUSPECT`, `3` $\rightarrow$ `ERROR`, `9` $\rightarrow$ `UNKNOWN`/`MISSING`).
+  - Report type filtering (`FM-12`, `FM-15`, `METAR`).
+- **`test_profiler.py`**:
+  - Calculation of summary statistics (min, mean, max, median, std, IQR).
+  - Missingness percentage computation per variable.
+  - Duplicate timestamp and out-of-order sequence detection.
+  - Cadence estimation (median, min, max, mode, regularity flag).
+  - Markdown and JSON profile export.
+- **`test_noaa_connector.py`**:
+  - `NOAAISDConnector` lifecycle, local caching, and record streaming.
+- **`test_ingestion_edge_cases.py`**:
+  - 17 distinct edge cases: missing $T$, missing $T_d$, $T == T_d$, $T_d > T$, missing pressure, duplicate timestamps, multi-report coincident timestamps, corrupted rows, empty files, headers-only files, and unexpected columns.
+
+---
+
+## 5. Test Commands
 ```bash
 # Run full unit test suite
 pytest -v tests/unit/
