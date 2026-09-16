@@ -8,7 +8,15 @@ import { MetricTable, ColumnDef } from '../components/MetricTable';
 import { StationStatus } from '../components/StationStatus';
 import { StationItem } from '../types/api';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Activity, AlertTriangle, ShieldCheck, Search } from 'lucide-react';
+import {
+  formatTemperature,
+  formatHumidity,
+  formatPressure,
+  formatHealthScore,
+  formatLatency,
+  formatIsoUtc,
+} from '../utils/formatters';
+import { Radio, AlertTriangle, ShieldCheck, Search } from 'lucide-react';
 
 export const NetworkOverviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +29,16 @@ export const NetworkOverviewPage: React.FC = () => {
   const totalStations = stations.length;
   const activeStations = stations.filter(
     (s) => (s.latest_snapshot?.status || s.status) === 'ACTIVE'
+  ).length;
+
+  const criticalCount = stations.filter(
+    (s) => (s.latest_snapshot?.latest_health_score ?? 100) < 60
+  ).length;
+  const warningCount = stations.filter(
+    (s) => {
+      const sc = s.latest_snapshot?.latest_health_score ?? 100;
+      return sc >= 60 && sc < 85;
+    }
   ).length;
 
   const meanHealth =
@@ -65,10 +83,7 @@ export const NetworkOverviewPage: React.FC = () => {
       align: 'right',
       render: (stn) => (
         <span className="text-ops-weather font-mono">
-          {stn.latest_snapshot?.latest_temperature_c !== undefined &&
-          stn.latest_snapshot?.latest_temperature_c !== null
-            ? `${stn.latest_snapshot.latest_temperature_c.toFixed(1)}°`
-            : '--'}
+          {formatTemperature(stn.latest_snapshot?.latest_temperature_c, 1, false)}
         </span>
       ),
       sortable: true,
@@ -79,10 +94,7 @@ export const NetworkOverviewPage: React.FC = () => {
       align: 'right',
       render: (stn) => (
         <span className="text-ops-humidity font-mono">
-          {stn.latest_snapshot?.latest_humidity_pct !== undefined &&
-          stn.latest_snapshot?.latest_humidity_pct !== null
-            ? `${stn.latest_snapshot.latest_humidity_pct.toFixed(0)}%`
-            : '--'}
+          {formatHumidity(stn.latest_snapshot?.latest_humidity_pct, 0, false)}
         </span>
       ),
       sortable: true,
@@ -93,10 +105,7 @@ export const NetworkOverviewPage: React.FC = () => {
       align: 'right',
       render: (stn) => (
         <span className="text-ops-pressure font-mono">
-          {stn.latest_snapshot?.latest_pressure_hpa !== undefined &&
-          stn.latest_snapshot?.latest_pressure_hpa !== null
-            ? `${stn.latest_snapshot.latest_pressure_hpa.toFixed(1)}`
-            : '--'}
+          {formatPressure(stn.latest_snapshot?.latest_pressure_hpa, 1, false)}
         </span>
       ),
       sortable: true,
@@ -108,7 +117,7 @@ export const NetworkOverviewPage: React.FC = () => {
       render: (stn) => {
         const score = stn.latest_snapshot?.latest_health_score ?? 100;
         const color = score < 60 ? 'text-red-400' : score < 85 ? 'text-amber-400' : 'text-emerald-400';
-        return <span className={`font-mono font-medium ${color}`}>{Math.round(score)}/100</span>;
+        return <span className={`font-mono font-medium ${color}`}>{formatHealthScore(score)}/100</span>;
       },
       sortable: true,
     },
@@ -119,7 +128,7 @@ export const NetworkOverviewPage: React.FC = () => {
       render: (stn) => (
         <span className="text-[11px] font-mono text-slate-400">
           {stn.latest_snapshot?.last_seen_timestamp
-            ? new Date(stn.latest_snapshot.last_seen_timestamp).toISOString().substring(11, 19) + 'Z'
+            ? formatIsoUtc(stn.latest_snapshot.last_seen_timestamp, true)
             : '--'}
         </span>
       ),
@@ -131,7 +140,7 @@ export const NetworkOverviewPage: React.FC = () => {
       render: (stn) => {
         const count = stn.latest_snapshot?.active_anomaly_count_24h ?? 0;
         return count > 0 ? (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-300 border border-red-800">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-300 border border-red-800 font-bold">
             {count} FLAG
           </span>
         ) : (
@@ -144,30 +153,43 @@ export const NetworkOverviewPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1. Compact Network Operational Status Strip */}
-      <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
+      {/* 1. Compact Network Operational Status Strip (Prioritizing Active Anomalies & Health) */}
+      <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
+        <div className="flex flex-wrap items-center gap-5">
+          {/* Active Network Stations */}
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-ops-weather" />
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block">Active Stations</span>
+              <span className="text-[10px] font-mono text-slate-400 uppercase block">Stations Online</span>
               <span className="text-h2 font-mono font-bold text-slate-100">
                 {activeStations} <span className="text-slate-500 text-data font-normal">/ {totalStations}</span>
               </span>
             </div>
           </div>
 
+          {/* Active Anomalies Alert Count */}
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-ops-warning" />
+            <AlertTriangle className={`w-4 h-4 ${activeAnomalies.length > 0 ? 'text-red-400 animate-pulse' : 'text-slate-400'}`} />
             <div>
               <span className="text-[10px] font-mono text-slate-400 uppercase block">Active Anomalies</span>
-              <span className="text-h2 font-mono font-bold text-slate-100">
+              <span className={`text-h2 font-mono font-bold ${activeAnomalies.length > 0 ? 'text-red-400' : 'text-slate-100'}`}>
                 {activeAnomalies.length}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Critical / Warning Stations Breakdown */}
+          <div className="flex items-center gap-3 font-mono text-[11px] border-l border-border-subtle pl-4">
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase block">Degraded / Critical:</span>
+              <span className="font-semibold text-amber-400">{warningCount} WARN</span>
+              <span className="text-slate-500 mx-1">·</span>
+              <span className="font-semibold text-red-400">{criticalCount} CRIT</span>
+            </div>
+          </div>
+
+          {/* Network Health Index */}
+          <div className="flex items-center gap-2 border-l border-border-subtle pl-4">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <div>
               <span className="text-[10px] font-mono text-slate-400 uppercase block">Network Health</span>
@@ -176,21 +198,12 @@ export const NetworkOverviewPage: React.FC = () => {
               </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-ops-pressure" />
-            <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block">Pipeline Latency</span>
-              <span className="text-h2 font-mono font-bold text-slate-100">
-                {systemHealth?.mean_pipeline_latency_ms ?? 5.8} ms
-              </span>
-            </div>
-          </div>
         </div>
 
-        <div className="text-right text-[11px] font-mono text-slate-400 hidden sm:block">
-          <div>Topology Nodes: <strong className="text-slate-200">{totalStations}</strong></div>
-          <div>Sampling Cadence: <strong className="text-slate-200">5 min</strong></div>
+        {/* Pipeline Latency & Refresh Cadence (Secondary Metadata) */}
+        <div className="text-right text-[11px] font-mono text-slate-400 hidden md:block">
+          <div>Pipeline Latency: <strong className="text-slate-300">{formatLatency(systemHealth?.mean_pipeline_latency_ms ?? 5.8)}</strong></div>
+          <div>Cadence: <span className="text-emerald-400">15s Polling Active</span></div>
         </div>
       </div>
 

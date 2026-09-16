@@ -1,19 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStations, useStationHealth } from '../hooks/useStations';
 import { HealthScore } from '../components/HealthScore';
 import { HealthTrend } from '../components/HealthTrend';
 import { MetricTable, ColumnDef } from '../components/MetricTable';
 import { StationItem } from '../types/api';
+import { formatHealthScore } from '../utils/formatters';
 import { HeartPulse, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SensorHealthPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: stations = [], isLoading: isLoadingStations } = useStations();
-  const [selectedStationId, setSelectedStationId] = useState<string>('AWS_001');
+  const [selectedStationId, setSelectedStationId] = useState<string>('');
+
+  // Default to first station or degraded station on load
+  useEffect(() => {
+    if (!selectedStationId && stations.length > 0) {
+      const degraded = stations.find((s) => (s.latest_snapshot?.latest_health_score ?? 100) < 85);
+      setSelectedStationId(degraded ? degraded.station_id : stations[0].station_id);
+    }
+  }, [stations, selectedStationId]);
 
   const { data: selectedHealth } = useStationHealth(selectedStationId);
-
   const activeStation = stations.find((s) => s.station_id === selectedStationId);
 
   const columns: ColumnDef<StationItem>[] = [
@@ -35,7 +43,7 @@ export const SensorHealthPage: React.FC = () => {
       render: (stn) => {
         const score = stn.latest_snapshot?.latest_health_score ?? 100;
         const color = score < 60 ? 'text-red-400' : score < 85 ? 'text-amber-400' : 'text-emerald-400';
-        return <span className={`font-mono font-bold ${color}`}>{Math.round(score)}/100</span>;
+        return <span className={`font-mono font-bold ${color}`}>{formatHealthScore(score)}/100</span>;
       },
       sortable: true,
     },
@@ -106,7 +114,7 @@ export const SensorHealthPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-slate-400">Target Station:</span>
+          <span className="text-[11px] font-mono text-slate-400">Station Inspector:</span>
           <select
             value={selectedStationId}
             onChange={(e) => setSelectedStationId(e.target.value)}
@@ -127,14 +135,16 @@ export const SensorHealthPage: React.FC = () => {
         <div className="lg:col-span-5 space-y-4">
           <div className="p-3 rounded bg-surface-2 border border-border flex items-center justify-between">
             <span className="font-mono text-data font-semibold text-slate-100">
-              {selectedStationId} ({activeStation?.name ?? 'Target Station'})
+              {selectedStationId ? `${selectedStationId} (${activeStation?.name ?? 'AWS'})` : 'Select Station'}
             </span>
-            <button
-              onClick={() => navigate(`/stations/${selectedStationId}`)}
-              className="text-[11px] font-mono text-ops-weather hover:underline"
-            >
-              Station Telemetry &rarr;
-            </button>
+            {selectedStationId && (
+              <button
+                onClick={() => navigate(`/stations/${selectedStationId}`)}
+                className="text-[11px] font-mono text-ops-weather hover:underline"
+              >
+                Station Telemetry &rarr;
+              </button>
+            )}
           </div>
 
           <HealthScore

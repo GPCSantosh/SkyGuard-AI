@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate, useParams } from 'react-router-dom';
+import { NavLink, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useStations } from '../hooks/useStations';
 import {
   Network,
@@ -18,13 +18,28 @@ export const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const { data: stations = [] } = useStations();
   const navigate = useNavigate();
-  const { stationId: activeStationId } = useParams<{ stationId?: string }>();
+  const { stationId: routeStationId } = useParams<{ stationId?: string }>();
+  const location = useLocation();
+
+  // Determine active station from route or first configured station
+  const defaultStationId = stations.length > 0 ? stations[0].station_id : '';
+  const activeStationId = routeStationId || defaultStationId;
 
   const navItems = [
     { to: '/network', label: 'Network Overview', icon: Network },
     { to: '/live', label: 'Live Monitoring', icon: Activity },
-    { to: '/stations/AWS_001', label: 'Station Details', icon: Radio },
-    { to: '/anomalies', label: 'Anomaly Investigation', icon: AlertTriangle },
+    {
+      to: activeStationId ? `/stations/${activeStationId}` : '/network',
+      label: 'Station Details',
+      icon: Radio,
+      activeMatch: (pathname: string) => pathname.startsWith('/stations'),
+    },
+    {
+      to: '/anomalies',
+      label: 'Anomaly Investigation',
+      icon: AlertTriangle,
+      activeMatch: (pathname: string) => pathname.startsWith('/anomalies'),
+    },
     { to: '/health', label: 'Sensor Health', icon: HeartPulse },
     { to: '/corrections', label: 'Correction Review', icon: GitCompare },
     { to: '/history', label: 'Historical Analysis', icon: History },
@@ -49,17 +64,19 @@ export const Sidebar: React.FC = () => {
         <nav className="p-2 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isMatch = item.activeMatch
+              ? item.activeMatch(location.pathname)
+              : location.pathname === item.to;
+
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-2.5 py-2 rounded text-data font-medium transition-colors ${
-                    isActive
-                      ? 'bg-surface-2 text-ops-weather border-l-2 border-l-ops-weather'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-surface-hover'
-                  }`
-                }
+                className={`flex items-center gap-3 px-2.5 py-2 rounded text-data font-medium transition-colors ${
+                  isMatch
+                    ? 'bg-surface-2 text-ops-weather border-l-2 border-l-ops-weather'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-hover'
+                }`}
                 title={collapsed ? item.label : undefined}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -79,7 +96,7 @@ export const Sidebar: React.FC = () => {
             <div className="space-y-0.5 max-h-56 overflow-y-auto pr-1">
               {sortedStations.map((stn) => {
                 const score = stn.latest_snapshot?.latest_health_score ?? 100;
-                const isSelected = activeStationId === stn.station_id;
+                const isSelected = activeStationId === stn.station_id && location.pathname.startsWith('/stations');
                 const anomCount = stn.latest_snapshot?.active_anomaly_count_24h ?? 0;
 
                 let scoreColor = 'text-emerald-400';

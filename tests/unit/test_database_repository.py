@@ -100,3 +100,52 @@ def test_anomaly_event_persistence_and_filtering(repo):
     single = repo.get_anomaly_by_id("ANOM-20260917-STN001-0002")
     assert single is not None
     assert single.decision == HybridDecisionType.UNCERTAIN
+
+
+def test_system_health_active_stations_matches_topology_not_observations():
+    """Regression guard: active_monitored_stations must equal configured network stations,
+    NOT the number of observation records in the store.
+
+    Previously len(self.observations) was used, which grew to 100+ records
+    while only 1 physical station was configured. That caused the dashboard to
+    display '100 active stations' instead of the correct network size.
+    """
+    topo = SpatialNetworkTopology()
+    topo.add_station(
+        StationNode(station_id="GUARD_001", name="Guard Station 1", latitude=28.6, longitude=77.2, elevation_m=200.0)
+    )
+    topo.add_station(
+        StationNode(station_id="GUARD_002", name="Guard Station 2", latitude=28.7, longitude=77.3, elevation_m=210.0)
+    )
+    repo = DatabaseRepository(topology=topo)
+
+    # Persist 50 observation records from a single station — simulating a busy data stream
+    for i in range(50):
+        obs = WeatherObservation(
+            station_id="GUARD_001",
+            timestamp=datetime(2026, 9, 17, 0, i % 60, i % 30, tzinfo=timezone.utc),
+            latitude=28.6,
+            longitude=77.2,
+            temperature=25.0 + i * 0.1,
+            humidity=50.0,
+            pressure=1013.25,
+        )
+        repo.save_observation(obs)
+
+    health = repo.get_system_health()
+
+    # CRITICAL: active_monitored_stations must reflect topology size (2), not observation dict size (50)
+    assert health.active_monitored_stations == 2, (
+        f"active_monitored_stations ({health.active_monitored_stations}) must equal the number of "
+        f"configured topology stations (2), not the observation record count "
+        f"({health.total_observations_processed}). "
+        "Prevents misleading 'N active stations' dashboard display."
+    )
+    assert health.total_observations_processed == 50, (
+        "total_observations_processed should count individual observation records, not stations."
+    )
+    # The spatial topology count and active monitored count must always agree
+    assert health.spatial_topology_stations_count == health.active_monitored_stations, (
+        "spatial_topology_stations_count and active_monitored_stations must always agree."
+    )
+

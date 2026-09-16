@@ -1,19 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStations, useStationHistory } from '../hooks/useStations';
 import { useAnomalies } from '../hooks/useAnomalies';
 import { WeatherTrendChart, TimeSeriesPoint } from '../components/WeatherTrendChart';
 import { MetricTable, ColumnDef } from '../components/MetricTable';
 import { AnomalyEventRecord } from '../types/api';
 import { SeverityBadge } from '../components/SeverityBadge';
+import { formatIsoUtc } from '../utils/formatters';
 import { History, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const HistoricalAnalysisPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: stations = [] } = useStations();
-  const [selectedStationId, setSelectedStationId] = useState<string>('AWS_001');
+  const [selectedStationId, setSelectedStationId] = useState<string>('');
   const [timeRange, setTimeRange] = useState<string>('24h');
-  const [limit, setLimit] = useState<number>(200);
+  const [limit, setLimit] = useState<number>(300);
+
+  // Set default station when stations load if none selected
+  useEffect(() => {
+    if (!selectedStationId && stations.length > 0) {
+      setSelectedStationId(stations[0].station_id);
+    }
+  }, [stations, selectedStationId]);
 
   const { data: historyData } = useStationHistory(selectedStationId, { limit });
   const { data: anomaliesData, isLoading: isLoadingAnomalies } = useAnomalies({
@@ -26,11 +34,28 @@ export const HistoricalAnalysisPage: React.FC = () => {
     const hum: TimeSeriesPoint[] = [];
     const pres: TimeSeriesPoint[] = [];
 
-    if (historyData?.items) {
-      historyData.items.forEach((obs) => {
-        temp.push({ timestamp: obs.timestamp, raw: obs.temperature, imputed: null });
-        hum.push({ timestamp: obs.timestamp, raw: obs.humidity, imputed: null });
-        pres.push({ timestamp: obs.timestamp, raw: obs.pressure, imputed: null });
+    if (historyData?.items && historyData.items.length > 0) {
+      // Sort chronologically ascending for line charts
+      const sorted = [...historyData.items].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      sorted.forEach((obs) => {
+        temp.push({
+          timestamp: obs.timestamp,
+          raw: obs.temperature,
+          imputed: null,
+        });
+        hum.push({
+          timestamp: obs.timestamp,
+          raw: obs.humidity,
+          imputed: null,
+        });
+        pres.push({
+          timestamp: obs.timestamp,
+          raw: obs.pressure,
+          imputed: null,
+        });
       });
     }
 
@@ -51,7 +76,7 @@ export const HistoricalAnalysisPage: React.FC = () => {
       header: 'Timestamp (UTC)',
       render: (ev) => (
         <span className="font-mono text-slate-300">
-          {new Date(ev.timestamp).toISOString().replace('T', ' ').substring(0, 19)}Z
+          {formatIsoUtc(ev.timestamp)}
         </span>
       ),
       sortable: true,
@@ -59,7 +84,7 @@ export const HistoricalAnalysisPage: React.FC = () => {
     {
       key: 'decision',
       header: 'Decision',
-      render: (ev) => <span className="font-mono text-ops-weather">{ev.decision}</span>,
+      render: (ev) => <span className="font-mono text-ops-weather font-semibold">{ev.decision}</span>,
       sortable: true,
     },
     {
@@ -95,6 +120,8 @@ export const HistoricalAnalysisPage: React.FC = () => {
       ),
     },
   ];
+
+  const currentStation = stations.find((s) => s.station_id === selectedStationId);
 
   return (
     <div className="space-y-4">
@@ -149,12 +176,13 @@ export const HistoricalAnalysisPage: React.FC = () => {
       {/* Synchronized Charts: Full-Width Primary + 2 Secondary */}
       <div className="space-y-3">
         <WeatherTrendChart
-          title={`${selectedStationId} — Primary Temperature Sequence`}
+          title={`${selectedStationId || 'Station'} (${currentStation?.name || 'AWS'}) — Temperature Sequence`}
           unit="°C"
           data={tempData}
           color="#38BDF8"
           syncId="history-sync"
           height={240}
+          emptyMessage={`No temperature records received for ${selectedStationId || 'the station'} in the selected ${timeRange} window.`}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -165,6 +193,7 @@ export const HistoricalAnalysisPage: React.FC = () => {
             color="#34D399"
             syncId="history-sync"
             height={180}
+            emptyMessage={`No humidity records received for ${selectedStationId || 'the station'} in the selected ${timeRange} window.`}
           />
 
           <WeatherTrendChart
@@ -174,6 +203,7 @@ export const HistoricalAnalysisPage: React.FC = () => {
             color="#818CF8"
             syncId="history-sync"
             height={180}
+            emptyMessage={`No pressure records received for ${selectedStationId || 'the station'} in the selected ${timeRange} window.`}
           />
         </div>
       </div>
@@ -195,7 +225,7 @@ export const HistoricalAnalysisPage: React.FC = () => {
           isLoading={isLoadingAnomalies}
           rowIdKey="event_id"
           onRowClick={(row) => navigate(`/anomalies/${row.event_id}`)}
-          emptyMessage="No anomaly events detected for this station in the specified window."
+          emptyMessage={`No anomaly events flagged for station ${selectedStationId || ''} in the selected time window.`}
         />
       </div>
     </div>

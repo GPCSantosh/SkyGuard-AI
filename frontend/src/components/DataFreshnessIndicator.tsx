@@ -12,16 +12,16 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   secondsSinceLastUpdate,
   lastHeartbeat,
 }) => {
-  let statusText = 'LIVE STREAM';
+  let statusText = 'LIVE STREAM · POLLING (15s)';
   let pulseColor = 'bg-emerald-400';
   let badgeBorder = 'border-emerald-800/80 bg-emerald-950/40 text-emerald-300';
 
   if (!isConnected) {
-    statusText = 'OFFLINE / DISCONNECTED';
+    statusText = 'STREAM OFFLINE / DISCONNECTED';
     pulseColor = 'bg-red-500';
     badgeBorder = 'border-red-800/80 bg-red-950/40 text-red-400';
-  } else if (secondsSinceLastUpdate > 30) {
-    statusText = `STALE (${secondsSinceLastUpdate}s)`;
+  } else if (secondsSinceLastUpdate > 60) {
+    statusText = `TELEMETRY STALE (${secondsSinceLastUpdate}s)`;
     pulseColor = 'bg-amber-400';
     badgeBorder = 'border-amber-800/80 bg-amber-950/40 text-amber-300';
   }

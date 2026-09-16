@@ -9,6 +9,7 @@ import {
   Tooltip,
   ReferenceArea,
 } from 'recharts';
+import { formatIsoUtc } from '../utils/formatters';
 
 export interface TimeSeriesPoint {
   timestamp: string; // ISO or formatted
@@ -26,17 +27,21 @@ interface WeatherTrendChartProps {
   syncId?: string;
   height?: number;
   anomalyWindow?: [string, string];
+  emptyMessage?: string;
 }
 
 export const WeatherTrendChart: React.FC<WeatherTrendChartProps> = ({
   title,
   unit,
-  data,
+  data = [],
   color = '#38BDF8',
   syncId,
   height = 180,
   anomalyWindow,
+  emptyMessage = 'No observations available for the selected station/time range.',
 }) => {
+  const hasData = data && data.length > 0 && data.some((d) => d.raw !== null && d.raw !== undefined);
+
   return (
     <div className="p-3 rounded border border-border bg-surface-1">
       <div className="flex items-center justify-between mb-2">
@@ -57,85 +62,94 @@ export const WeatherTrendChart: React.FC<WeatherTrendChartProps> = ({
       </div>
 
       <div style={{ width: '100%', height }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            syncId={syncId}
-            margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-          >
-            <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="timestamp"
-              stroke="#64748B"
-              tick={{ fill: '#64748B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-              tickFormatter={(val) => {
-                try {
-                  const d = new Date(val);
-                  return isNaN(d.getTime()) ? String(val).substring(11, 16) : d.toISOString().substring(11, 16);
-                } catch {
-                  return String(val);
-                }
-              }}
-              minTickGap={30}
-            />
-            <YAxis
-              stroke="#64748B"
-              tick={{ fill: '#64748B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-              domain={['auto', 'auto']}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#111827',
-                borderColor: '#2D3748',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontFamily: 'JetBrains Mono',
-                color: '#F8FAFC',
-                padding: '6px 10px',
-              }}
-              formatter={(value: unknown, name: string) => {
-                const numericVal = typeof value === 'number' ? value.toFixed(2) : String(value ?? '--');
-                const label = name === 'raw' ? 'Raw Sensor' : name === 'imputed' ? 'Imputed' : name;
-                return [`${numericVal} ${unit}`, label];
-              }}
-              labelFormatter={(label) => `Time: ${new Date(label).toUTCString()}`}
-            />
-
-            {anomalyWindow && (
-              <ReferenceArea
-                x1={anomalyWindow[0]}
-                x2={anomalyWindow[1]}
-                strokeOpacity={0.3}
-                fill="#EF4444"
-                fillOpacity={0.12}
+        {!hasData ? (
+          <div className="w-full h-full flex items-center justify-center rounded bg-surface-2/40 border border-border-subtle/50 text-data font-mono text-slate-400 text-center p-4">
+            {emptyMessage}
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={data}
+              syncId={syncId}
+              margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
+            >
+              <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="timestamp"
+                stroke="#64748B"
+                tick={{ fill: '#64748B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                tickFormatter={(val) => {
+                  try {
+                    const d = new Date(val);
+                    return isNaN(d.getTime())
+                      ? String(val).substring(11, 16)
+                      : d.toISOString().substring(11, 16);
+                  } catch {
+                    return String(val);
+                  }
+                }}
+                minTickGap={30}
               />
-            )}
+              <YAxis
+                stroke="#64748B"
+                tick={{ fill: '#64748B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                domain={['auto', 'auto']}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#111827',
+                  borderColor: '#2D3748',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontFamily: 'JetBrains Mono',
+                  color: '#F8FAFC',
+                  padding: '6px 10px',
+                }}
+                formatter={(value: unknown, name: string) => {
+                  const numericVal =
+                    typeof value === 'number' ? value.toFixed(2) : String(value ?? '--');
+                  const label = name === 'raw' ? 'Raw Sensor' : name === 'imputed' ? 'Imputed' : name;
+                  return [`${numericVal} ${unit}`, label];
+                }}
+                labelFormatter={(label) => `Time: ${formatIsoUtc(label)}`}
+              />
 
-            {/* Raw Sensor - Solid Line */}
-            <Line
-              type="linear"
-              dataKey="raw"
-              stroke={color}
-              strokeWidth={1.5}
-              dot={false}
-              activeDot={{ r: 4, stroke: color, fill: '#0B0F17' }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
+              {anomalyWindow && (
+                <ReferenceArea
+                  x1={anomalyWindow[0]}
+                  x2={anomalyWindow[1]}
+                  strokeOpacity={0.3}
+                  fill="#EF4444"
+                  fillOpacity={0.12}
+                />
+              )}
 
-            {/* Imputed / Model Estimate - Dashed Line */}
-            <Line
-              type="linear"
-              dataKey="imputed"
-              stroke="#34D399"
-              strokeWidth={1.5}
-              strokeDasharray="4 4"
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+              {/* Raw Sensor - Solid Line (Linear interpolation) */}
+              <Line
+                type="linear"
+                dataKey="raw"
+                stroke={color}
+                strokeWidth={1.5}
+                dot={false}
+                activeDot={{ r: 4, stroke: color, fill: '#0B0F17' }}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+
+              {/* Imputed / Model Estimate - Dashed Line */}
+              <Line
+                type="linear"
+                dataKey="imputed"
+                stroke="#34D399"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

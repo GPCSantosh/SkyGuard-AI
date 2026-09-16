@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { useStations } from '../hooks/useStations';
-import { useStationHistory } from '../hooks/useStations';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useStations, useStationHistory } from '../hooks/useStations';
 import { MetricTable, ColumnDef } from '../components/MetricTable';
 import { StationStatus } from '../components/StationStatus';
 import { WeatherTrendChart, TimeSeriesPoint } from '../components/WeatherTrendChart';
 import { StationItem } from '../types/api';
-import { Search, Filter, AlertCircle } from 'lucide-react';
+import { formatTemperature, formatHumidity, formatPressure, formatHealthScore } from '../utils/formatters';
+import { Search, Filter, Radio, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const LiveMonitoringPage: React.FC = () => {
@@ -14,14 +14,29 @@ export const LiveMonitoringPage: React.FC = () => {
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [healthFilter, setHealthFilter] = useState<string>('ALL');
-  const [selectedStationId, setSelectedStationId] = useState<string>('AWS_001');
+  const [selectedStationId, setSelectedStationId] = useState<string>('');
+
+  // Default selection to first station or first flagged station
+  useEffect(() => {
+    if (!selectedStationId && stations.length > 0) {
+      const flagged = stations.find(
+        (s) =>
+          (s.latest_snapshot?.active_anomaly_count_24h ?? 0) > 0 ||
+          (s.latest_snapshot?.latest_health_score ?? 100) < 85
+      );
+      setSelectedStationId(flagged ? flagged.station_id : stations[0].station_id);
+    }
+  }, [stations, selectedStationId]);
 
   // Fetch telemetry for sparkline strip for selected station
-  const { data: historyData } = useStationHistory(selectedStationId, { limit: 24 });
+  const { data: historyData } = useStationHistory(selectedStationId, { limit: 36 });
 
   const sparklineData: TimeSeriesPoint[] = useMemo(() => {
-    if (!historyData?.items) return [];
-    return historyData.items.map((obs) => ({
+    if (!historyData?.items || historyData.items.length === 0) return [];
+    const sorted = [...historyData.items].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    return sorted.map((obs) => ({
       timestamp: obs.timestamp,
       raw: obs.temperature,
       imputed: null,
@@ -46,15 +61,7 @@ export const LiveMonitoringPage: React.FC = () => {
     });
   }, [stations, search, statusFilter, healthFilter]);
 
-  // Stations requiring operational attention (degraded/critical or active anomalies)
-  const attentionStations = useMemo(() => {
-    return stations.filter(
-      (s) =>
-        (s.latest_snapshot?.latest_health_score ?? 100) < 85 ||
-        (s.latest_snapshot?.active_anomaly_count_24h ?? 0) > 0 ||
-        (s.latest_snapshot?.status || s.status) !== 'ACTIVE'
-    );
-  }, [stations]);
+  const activeStation = stations.find((s) => s.station_id === selectedStationId);
 
   const columns: ColumnDef<StationItem>[] = [
     {
@@ -70,7 +77,7 @@ export const LiveMonitoringPage: React.FC = () => {
     },
     {
       key: 'status',
-      header: 'Op Status',
+      header: 'Operational Status',
       render: (stn) => <StationStatus status={stn.latest_snapshot?.status || stn.status} />,
       sortable: true,
     },
@@ -79,8 +86,8 @@ export const LiveMonitoringPage: React.FC = () => {
       header: 'Temperature',
       align: 'right',
       render: (stn) => (
-        <span className="font-mono text-ops-weather">
-          {stn.latest_snapshot?.latest_temperature_c?.toFixed(1) ?? '--'} °C
+        <span className="font-mono text-ops-weather font-medium">
+          {formatTemperature(stn.latest_snapshot?.latest_temperature_c, 1, true)}
         </span>
       ),
       sortable: true,
@@ -90,19 +97,19 @@ export const LiveMonitoringPage: React.FC = () => {
       header: 'Relative Humidity',
       align: 'right',
       render: (stn) => (
-        <span className="font-mono text-ops-humidity">
-          {stn.latest_snapshot?.latest_humidity_pct?.toFixed(0) ?? '--'} %
+        <span className="font-mono text-ops-humidity font-medium">
+          {formatHumidity(stn.latest_snapshot?.latest_humidity_pct, 1, true)}
         </span>
       ),
       sortable: true,
     },
     {
       key: 'pressure',
-      header: 'Pressure',
+      header: 'Sea-Level Pressure',
       align: 'right',
       render: (stn) => (
-        <span className="font-mono text-ops-pressure">
-          {stn.latest_snapshot?.latest_pressure_hpa?.toFixed(1) ?? '--'} hPa
+        <span className="font-mono text-ops-pressure font-medium">
+          {formatPressure(stn.latest_snapshot?.latest_pressure_hpa, 1, true)}
         </span>
       ),
       sortable: true,
@@ -114,7 +121,7 @@ export const LiveMonitoringPage: React.FC = () => {
       render: (stn) => {
         const score = stn.latest_snapshot?.latest_health_score ?? 100;
         const color = score < 60 ? 'text-red-400' : score < 85 ? 'text-amber-400' : 'text-emerald-400';
-        return <span className={`font-mono font-medium ${color}`}>{Math.round(score)}/100</span>;
+        return <span className={`font-mono font-medium ${color}`}>{formatHealthScore(score)}/100</span>;
       },
       sortable: true,
     },
@@ -126,7 +133,7 @@ export const LiveMonitoringPage: React.FC = () => {
         const c = stn.latest_snapshot?.active_anomaly_count_24h ?? 0;
         return c > 0 ? (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-300 border border-red-800">
-            {c}
+            {c} FLAG
           </span>
         ) : (
           <span className="text-[11px] font-mono text-slate-500">0</span>
@@ -154,7 +161,7 @@ export const LiveMonitoringPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header & Filter Controls */}
+      {/* Header & Filter Controls with Polling Indicator */}
       <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="relative w-64">
@@ -195,50 +202,50 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-[11px] font-mono text-slate-400">
-          Showing <strong className="text-slate-200">{filtered.length}</strong> of {stations.length} stations
+        {/* Live Stream / Polling Cadence Badge */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-2 border border-border text-[11px] font-mono text-emerald-400">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+            <span>LIVE STREAM · POLLING (15s)</span>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
+            Showing <strong className="text-slate-200">{filtered.length}</strong> of {stations.length}
+          </span>
         </div>
       </div>
 
-      {/* Attention & Selected Station Sparkline Strip */}
-      {attentionStations.length > 0 && (
-        <div className="p-3 rounded border border-amber-900/50 bg-amber-950/20">
+      {/* Approved Compact Sparkline Strip for Flagged / Selected Station */}
+      {selectedStationId ? (
+        <div className="p-3 rounded border border-border bg-surface-1">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-data font-medium text-amber-300">
-              <AlertCircle className="w-4 h-4" />
-              <span>Stations Requiring Operator Attention ({attentionStations.length})</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono text-slate-300 font-semibold uppercase">
+                Station Micro-Trend (3-Hour Cadence):
+              </span>
+              <span className="text-[11px] font-mono font-bold text-ops-weather">
+                {selectedStationId} {activeStation?.name ? `(${activeStation.name})` : ''}
+              </span>
             </div>
-            <span className="text-[11px] font-mono text-slate-400">
-              Selected Sparkline: <strong className="text-slate-100">{selectedStationId}</strong>
-            </span>
+            <button
+              onClick={() => navigate(`/stations/${selectedStationId}`)}
+              className="text-[11px] font-mono text-ops-weather hover:underline flex items-center gap-1"
+            >
+              Full Profile &rarr;
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 pt-1">
-            <div className="lg:col-span-1 flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-              {attentionStations.map((stn) => (
-                <button
-                  key={stn.station_id}
-                  onClick={() => setSelectedStationId(stn.station_id)}
-                  className={`px-2 py-1 rounded text-[11px] font-mono border transition-colors ${
-                    selectedStationId === stn.station_id
-                      ? 'bg-surface-2 border-ops-weather text-ops-weather font-bold'
-                      : 'bg-surface-1 border-border text-slate-300 hover:bg-surface-hover'
-                  }`}
-                >
-                  {stn.station_id} ({Math.round(stn.latest_snapshot?.latest_health_score ?? 100)})
-                </button>
-              ))}
-            </div>
-
-            <div className="lg:col-span-2">
-              <WeatherTrendChart
-                title={`${selectedStationId} — Recent Temperature Trend`}
-                unit="°C"
-                data={sparklineData}
-                height={120}
-              />
-            </div>
-          </div>
+          <WeatherTrendChart
+            title={`${selectedStationId} Telemetry Sequence`}
+            unit="°C"
+            data={sparklineData}
+            height={130}
+            emptyMessage={`No recent telemetry recorded for ${selectedStationId}.`}
+          />
+        </div>
+      ) : (
+        <div className="p-4 rounded border border-border bg-surface-1 text-center font-mono text-data text-slate-400">
+          <Clock className="w-4 h-4 mx-auto mb-1 text-slate-500" />
+          Select a station in the telemetry matrix below to view live sparklines.
         </div>
       )}
 
@@ -250,6 +257,7 @@ export const LiveMonitoringPage: React.FC = () => {
         selectedRowId={selectedStationId}
         rowIdKey="station_id"
         onRowClick={(row) => setSelectedStationId(row.station_id)}
+        emptyMessage="No Automatic Weather Stations matched the operational filter."
       />
     </div>
   );

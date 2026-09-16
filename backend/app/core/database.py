@@ -306,7 +306,7 @@ class DatabaseRepository:
             model_registry_status="LOADED",
             active_model_id="isolation_forest_s42",
             spatial_topology_stations_count=len(self.topology.stations),
-            active_monitored_stations=len(self.observations),
+            active_monitored_stations=len(self.topology.stations),
             total_observations_processed=self.processed_observations_count,
             last_processed_timestamp=self.last_processed_timestamp,
             mean_pipeline_latency_ms=round(mean_latency, 2),

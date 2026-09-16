@@ -44,22 +44,26 @@ frontend/src/
 │   ├── TopBar.tsx        # 40px fixed bar with live UTC clock, alert count & freshness
 │   └── Sidebar.tsx       # 220px/48px collapsible navigation with severity-sorted station list
 │
-├── components/           # 14 Reusable domain & state components
+├── components/           # 15 Reusable domain & state components
 │   ├── StationStatus.tsx           # Status badge (ACTIVE, DEGRADED, OFFLINE)
 │   ├── SeverityBadge.tsx           # Severity indicator (INFO, LOW, MEDIUM, HIGH, CRITICAL)
-│   ├── DecisionBanner.tsx          # Flagship decision banner with trigger codes
-│   ├── DataFreshnessIndicator.tsx  # Pulse indicator for live telemetry liveness
+│   ├── DecisionBanner.tsx          # Flagship sticky decision banner with trigger codes & metadata
+│   ├── DataFreshnessIndicator.tsx  # Live stream polling cadence & freshness badge
 │   ├── MetricTable.tsx             # Dense sortable table with customizable columns
-│   ├── WeatherTrendChart.tsx       # Recharts time series with syncId & missing-value gaps
-│   ├── AnomalyTimeline.tsx         # Horizontal temporal sequence timeline
+│   ├── WeatherTrendChart.tsx       # Recharts time series with syncId & empty state handling
+│   ├── AnomalyTimeline.tsx         # Anomaly episode milestone reconstruction timeline
 │   ├── EvidencePanel.tsx           # 4-tier structured operational evidence hierarchy
+│   ├── ShapContributionPlot.tsx    # Horizontal SHAP feature attribution with directional impact
 │   ├── NeighborComparison.tsx      # Geodesic spatial cross-validation table
 │   ├── HealthScore.tsx             # Plain 0-100 Health Index with trend indicator
 │   ├── HealthTrend.tsx             # 5-component breakdown and parameter status
 │   ├── AlertList.tsx               # Active anomaly feed
-│   ├── NetworkMap.tsx              # Leaflet GIS layer with interactive station markers
-│   ├── SystemStatus.tsx            # Subsystem health grid
+│   ├── NetworkMap.tsx              # Leaflet GIS layer with severity markers & neighbor links
+│   ├── SystemStatus.tsx            # Approved Component Status Table
 │   └── StateFeedback.tsx           # LoadingSkeleton, ErrorState, EmptyState, DegradedModeBanner
+│
+├── utils/                # Pure formatting and data transformation helpers
+│   └── formatters.ts     # Parameter-specific formatting (temperature, humidity, pressure, coords)
 │
 ├── pages/                # 8 Primary Application Screens
 │   ├── NetworkOverviewPage.tsx      # /network (Network Overview)

@@ -31,6 +31,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<Navigate to="/network" replace />} />
             <Route path="/network" element={<NetworkOverviewPage />} />
             <Route path="/live" element={<LiveMonitoringPage />} />
+            <Route path="/stations" element={<StationDetailsPage />} />
             <Route path="/stations/:stationId" element={<StationDetailsPage />} />
             <Route path="/anomalies" element={<AnomalyInvestigationPage />} />
             <Route path="/anomalies/:eventId" element={<AnomalyInvestigationPage />} />
