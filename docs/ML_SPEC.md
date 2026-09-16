@@ -34,10 +34,10 @@ Pure machine learning alone can fail on meteorological edge cases, and determini
 - **RollingZScoreDetector** (`ml/models/baselines.py`): Dynamic temporal window standard score residual detector with min-periods and variance floor safeguards.
 - **IsolationForestDetector** (`ml/models/isolation_forest.py`): Multi-dimensional scikit-learn isolation forest wrapped in `BaseAnomalyModel` with sanitized input feature vectors, continuous normalized anomaly scores in $[0, 1]$, and validation quantile threshold calibration.
 
-### 3.2. Context & Future Pipeline Stages (Phase 4 & Phase 5)
+### 3.2. Context & Future Pipeline Stages (Phase 4, Phase 5 & Phase 6)
 - **Stage 2: Spatial & Synoptic Context Engine (Phase 4 — COMPLETED)**: Implemented in `ml/spatial/` (`SpatialNetworkTopology`, `SpatialContextEngine`). Computes geodesic neighbor deltas, directional consensus metrics, IDW baselines, and context categories (`LOCAL_ONLY`, `LOCAL_CLUSTER`, `REGIONAL_PATTERN`, `INSUFFICIENT_CONTEXT`) under strict causal alignment.
-- **Stage 3: Hybrid Root-Cause Decision Engine (Phase 5)**: Rule-augmented classifier mapping multi-model anomaly signals to the 15-category taxonomy.
-- **Stage 4: Explainability (Phase 5)**: TreeSHAP local feature attributions and sensor health indexing.
+- **Stage 3: Hybrid Root-Cause Decision Engine (Phase 5 — COMPLETED)**: Implemented in `ml/decision/` (`HybridDecisionEngine`, `ObservationEvidence`, `HybridDecision`). Hierarchical 7-gate multi-evidence arbiter arbitrating data quality, physical limits, persistence, multivariate thermodynamics, single-station ML, and spatial consensus into 5 operational classifications (`NORMAL`, `POSSIBLE_GENUINE_EVENT`, `PROBABLE_SENSOR_ANOMALY`, `PROBABLE_DATA_QUALITY_ISSUE`, `UNCERTAIN`).
+- **Stage 4: Explainability & Sensor Health Indexing (Phase 6)**: TreeSHAP local feature attributions, contribution vectors, and composite continuous 0-100 sensor health scoring.
 
 ---
 

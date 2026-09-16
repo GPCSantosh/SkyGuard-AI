@@ -58,8 +58,22 @@ Phase 4 extends evaluation to multi-station spatial context:
 
 ---
 
-## 6. Benchmark Execution Commands
-To execute the baseline benchmark, ablation study, and spatial evaluation:
+## 6. Hybrid Decision Engine Evaluation Framework (Phase 5)
+Phase 5 establishes multi-evidence arbitration across the 8 canonical operational scenarios:
+- **Scenario Benchmarks (`ml/experiments/run_hybrid_evaluation.py`)**:
+  - **Scenario A (Isolated Local Spike)**: Single-station ML anomaly + contradictory local spatial context $\rightarrow$ `PROBABLE_SENSOR_ANOMALY`.
+  - **Scenario B (Coherent Regional Heatwave/Squall)**: Extreme single-station reading + supporting regional spatial agreement $\rightarrow$ `POSSIBLE_GENUINE_EVENT`.
+  - **Scenario C (Sensor Drift in Static Ambient Air)**: Uncorroborated progressive step deviation $\rightarrow$ `PROBABLE_SENSOR_ANOMALY`.
+  - **Scenario D (Frozen Sensor / Flatline)**: Zero run-length variance over extended diurnal window $\rightarrow$ `PROBABLE_SENSOR_ANOMALY`.
+  - **Scenario E (Physical Thermodynamic Violation)**: $T_d > T$ or $RH=100\%$ with diverging vapor pressure $\rightarrow$ `PROBABLE_SENSOR_ANOMALY`.
+  - **Scenario F (Sparse / Isolated Station Network)**: ML anomaly with no active neighbors $\rightarrow$ `UNCERTAIN`.
+  - **Scenario G (Corrupted Telemetry / Data Quality Packet)**: Negative pressure / invalid status flags $\rightarrow$ `PROBABLE_DATA_QUALITY_ISSUE`.
+  - **Scenario H (Nominal Dynamic Weather)**: Standard diurnal cycle $\rightarrow$ `NORMAL`.
+
+---
+
+## 7. Benchmark Execution Commands
+To execute the baseline benchmark, ablation study, spatial evaluation, and hybrid decision evaluation:
 
 ```bash
 # 1. Main Baseline Experiment (Fixed Threshold, Rolling Z-Score, Isolation Forest)
@@ -68,10 +82,13 @@ python -m ml.experiments.runner --dataset data/processed/42182099999_2024_normal
 # 2. Phase 4 Spatial & Synoptic Context Engine Evaluation
 python -m ml.experiments.run_spatial_evaluation
 
-# 3. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
+# 3. Phase 5 Hybrid Decision Engine Scenario Evaluation (Scenarios A through H)
+python -m ml.experiments.run_hybrid_evaluation
+
+# 4. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
 python -c "from ml.experiments.ablation import run_ablation_study; run_ablation_study('data/processed/42182099999_2024_normalized.csv')"
 
-# 4. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
+# 5. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
 python -c "from ml.experiments.stability import run_multi_seed_stability; run_multi_seed_stability('data/processed/42182099999_2024_normalized.csv')"
 ```
 

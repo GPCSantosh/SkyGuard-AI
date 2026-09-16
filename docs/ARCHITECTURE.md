@@ -120,11 +120,11 @@ sequenceDiagram
 ---
 
 ## 5. ML & Context Responsibilities
-- **Spatial & Synoptic Context Engine (Phase 4)**: Evaluates multi-station geographic consistency across candidate AWS observations using exact geodesic distance (Haversine), forward compass azimuth, and elevation tracking. Emits structured contextual evidence (`LOCAL_ONLY`, `LOCAL_CLUSTER`, `REGIONAL_PATTERN`, `INSUFFICIENT_CONTEXT`) under strict causal forward-time exclusion ($t_{\text{neighbor}} \le t_{\text{target}}$).
-- **Unsupervised / Semi-Supervised Anomaly Detection (Phase 3)**: Process engineered features (z-scores, sliding-window standard deviations, diurnal trend residuals) using isolation forests and robust statistical estimators.
+- **Spatial & Synoptic Context Engine (Phase 4 — COMPLETED)**: Evaluates multi-station geographic consistency across candidate AWS observations using exact geodesic distance (Haversine), forward compass azimuth, and elevation tracking. Emits structured contextual evidence (`LOCAL_ONLY`, `LOCAL_CLUSTER`, `REGIONAL_PATTERN`, `INSUFFICIENT_CONTEXT`) under strict causal forward-time exclusion ($t_{\text{neighbor}} \le t_{\text{target}}$).
+- **Unsupervised / Semi-Supervised Anomaly Detection (Phase 3 — COMPLETED)**: Process engineered features (z-scores, sliding-window standard deviations, diurnal trend residuals) using isolation forests and robust statistical estimators.
 - **Score Representation**: ML anomaly scores are output as normalized distance/anomaly metrics, **not** mislabeled as calibrated probabilities.
-- **Root-Cause Classification (Phase 5)**: Map detected anomalies to the 15-category taxonomy (`NORMAL`, `SPIKE`, `DRIFT`, `FROZEN_SENSOR`, `POSSIBLE_GENUINE_EVENT`, etc.).
-- **Explainability (Phase 5)**: Provide local feature attributions (SHAP / contribution vectors) explaining why an observation triggered an anomaly.
+- **Hybrid Decision Engine (Phase 5 — COMPLETED)**: Hierarchical 7-gate multi-evidence arbiter combining data quality, planetary limits, temporal invariance, multivariate thermodynamics, single-station ML, and spatial context into structured classifications (`NORMAL`, `POSSIBLE_GENUINE_EVENT`, `PROBABLE_SENSOR_ANOMALY`, `PROBABLE_DATA_QUALITY_ISSUE`, `UNCERTAIN`).
+- **Explainability & Sensor Health Indexing (Phase 6)**: Provide local feature attributions (SHAP / contribution vectors) and composite continuous 0-100 sensor degradation tracking.
 - **Controlled Evaluation**: Support synthetic anomaly injection on historical baseline datasets with separated ground-truth evaluation pipelines.
 
 ---

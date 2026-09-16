@@ -1,0 +1,71 @@
+# SkyGuard AI — Hybrid Decision Engine Configuration
+# Configurable thresholds, hierarchy precedence, and operational severity rules.
+
+decision_engine:
+  engine_name: "SkyGuard Hybrid Decision Engine"
+  version: "1.0.0"
+  default_sampling_interval_minutes: 5.0
+
+# 1. Evidence Thresholds
+thresholds:
+  ml_anomaly:
+    score_low: 0.40
+    score_medium: 0.65
+    score_high: 0.80
+
+  temporal:
+    # Rate of change thresholds per minute
+    temp_rate_max_c_per_min: 0.50      # ~2.5°C in 5 min
+    rh_rate_max_pct_per_min: 3.00       # ~15% in 5 min
+    slp_rate_max_hpa_per_min: 0.40      # ~2.0 hPa in 5 min
+    # Flatline persistence
+    consecutive_unchanged_steps_threshold: 6   # ~30 min at 5-min cadence
+    flatline_duration_minutes_threshold: 30.0
+
+  spatial:
+    min_valid_neighbors_for_consensus: 2
+    regional_agreement_min_fraction: 0.50
+    local_deviation_zscore_threshold: 2.2
+    local_deviation_temp_c: 2.5
+    local_deviation_rh_pct: 10.0
+    local_deviation_slp_hpa: 3.0
+
+  multivariate:
+    dew_point_spread_negative_tolerance_c: -0.2
+    joint_divergence_zscore_threshold: 2.5
+
+  physical_bounds:
+    temperature_min_c: -50.0
+    temperature_max_c: 60.0
+    relative_humidity_min_pct: 0.0
+    relative_humidity_max_pct: 100.0
+    sea_level_pressure_min_hpa: 870.0
+    sea_level_pressure_max_hpa: 1085.0
+
+# 2. Recommended Operational Actions
+recommended_actions:
+  NORMAL: "No action required. Telemetry is meteorologically consistent and temporally coherent."
+  POSSIBLE_GENUINE_EVENT: "Corroborated by regional network. Compare adjacent station observations and monitor atmospheric event progression."
+  PROBABLE_SENSOR_ANOMALY: "Inspect sensor hardware and wiring. Validate against portable reference instrument or redundant sensor."
+  PROBABLE_DATA_QUALITY_ISSUE: "Check communication telemetry link, data logger encoding, and ingestion pipeline queue."
+  UNCERTAIN: "Collect additional observation cycles and review manual field logs before executing corrective maintenance."
+
+# 3. Severity Classification Rules
+severity_rules:
+  critical_criteria:
+    - "physical_out_of_bounds"
+    - "ml_score_above_high AND spatial_local_only"
+    - "telemetry_gap_exceeds_180_min"
+  high_criteria:
+    - "ml_score_above_medium AND spatial_local_only"
+    - "consecutive_unchanged_exceeds_12_steps"
+    - "rapid_unphysical_jump"
+  medium_criteria:
+    - "ml_score_above_medium AND spatial_insufficient"
+    - "multivariate_physical_contradiction"
+  low_criteria:
+    - "minor_rate_departure"
+    - "intermittent_missing_step"
+  info_criteria:
+    - "normal_operation"
+    - "corroborated_regional_event"

@@ -1,0 +1,65 @@
+{
+  "scenarios": {
+    "decisions": {
+      "Scenario_A_Normal": "NORMAL",
+      "Scenario_B_Local_Spike": "PROBABLE_SENSOR_ANOMALY",
+      "Scenario_C_Regional_Event": "POSSIBLE_GENUINE_EVENT",
+      "Scenario_D_Mixed_Event": "PROBABLE_SENSOR_ANOMALY",
+      "Scenario_E_Data_Gap": "PROBABLE_DATA_QUALITY_ISSUE",
+      "Scenario_F_Frozen_Sensor": "PROBABLE_SENSOR_ANOMALY",
+      "Scenario_G_Sensor_Drift": "PROBABLE_SENSOR_ANOMALY",
+      "Scenario_H_Conflicting_Evidence": "UNCERTAIN"
+    },
+    "severities": {
+      "Scenario_A_Normal": "INFO",
+      "Scenario_B_Local_Spike": "HIGH",
+      "Scenario_C_Regional_Event": "LOW",
+      "Scenario_D_Mixed_Event": "HIGH",
+      "Scenario_E_Data_Gap": "HIGH",
+      "Scenario_F_Frozen_Sensor": "MEDIUM",
+      "Scenario_G_Sensor_Drift": "MEDIUM",
+      "Scenario_H_Conflicting_Evidence": "MEDIUM"
+    },
+    "reasons": {
+      "Scenario_A_Normal": [
+        "NOMINAL_OBSERVATION"
+      ],
+      "Scenario_B_Local_Spike": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "LOCAL_SPATIAL_ISOLATION"
+      ],
+      "Scenario_C_Regional_Event": [
+        "ML_MODERATE_ANOMALY_SCORE",
+        "REGIONAL_SPATIAL_AGREEMENT",
+        "RAPID_RATE_OF_CHANGE"
+      ],
+      "Scenario_D_Mixed_Event": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "MIXED_REGIONAL_EVENT_WITH_LOCAL_EXCESS",
+        "REGIONAL_SPATIAL_AGREEMENT"
+      ],
+      "Scenario_E_Data_Gap": [
+        "MISSING_REQUIRED_VARIABLES",
+        "DATA_GAP"
+      ],
+      "Scenario_F_Frozen_Sensor": [
+        "PERSISTENT_VALUE"
+      ],
+      "Scenario_G_Sensor_Drift": [
+        "ML_MODERATE_ANOMALY_SCORE",
+        "LOCAL_SPATIAL_ISOLATION"
+      ],
+      "Scenario_H_Conflicting_Evidence": [
+        "ML_MODERATE_ANOMALY_SCORE",
+        "INSUFFICIENT_SPATIAL_CONTEXT",
+        "CONFLICTING_EVIDENCE"
+      ]
+    }
+  },
+  "metrics": {
+    "total_scenarios": 8,
+    "correct_decisions": 8,
+    "scenario_accuracy": 1.0,
+    "uncertainty_rate": 0.125
+  }
+}

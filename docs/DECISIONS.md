@@ -10,6 +10,10 @@
 | ADR-004 | Detection + Recommended Correction (Immutable Raw Data) | Accepted | 2026-09-16 |
 | ADR-005 | React & TypeScript Frontend with Operations Center Visuals | Accepted | 2026-09-16 |
 | ADR-006 | Geodesic Spatial Proximity over Administrative Boundaries | Accepted | 2026-09-16 |
+| ADR-007 | Spatial Context as Non-Probabilistic Contextual Evidence | Accepted | 2026-09-16 |
+| ADR-008 | Causal Neighbor Alignment with Strict Forward-Time Exclusion | Accepted | 2026-09-16 |
+| ADR-009 | Hierarchical Multi-Evidence Arbitration for Anomaly Decisions | Accepted | 2026-09-17 |
+| ADR-010 | Explicit UNCERTAIN Operational State for Ambiguous Telemetry | Accepted | 2026-09-17 |
 
 ---
 
@@ -74,3 +78,24 @@
 - **Context:** Real-time meteorological operations cannot look into the future. A spatial engine that evaluates station $S$ at time $T$ using neighbor observations from $T + \Delta t$ creates temporal leakage and unrealistic benchmark performance.
 - **Decision:** In operational/real-time mode, neighbor observations are strictly filtered such that $t_{\text{neighbor}} \le t_{\text{target}}$. Stale observations older than the configured temporal tolerance window are excluded from consensus statistics.
 - **Consequences:** Guarantees zero data leakage and ensures seamless transition from historical backtesting to real-time streaming operations.
+
+---
+
+## ADR-009: Hierarchical Multi-Evidence Arbitration for Anomaly Decisions
+- **Status:** Accepted
+- **Context:** Individual anomaly detection signals (such as single-station ML isolation scores, rolling z-scores, or spatial deltas) in isolation frequently produce false alarms or miss complex multivariate/systemic faults. Flattening multiple subsystem scores into a single weighted average destroys physical interpretability.
+- **Decision:** Implement a multi-gate hierarchical decision arbiter (`HybridDecisionEngine`) that evaluates unflattened evidence across 5 distinct domains:
+  1. Data Quality & Telemetry Integrity
+  2. Planetary / Physical Climatological Limits
+  3. Temporal Persistence & Invariance (Flatlining)
+  4. Multivariate Thermodynamic Physics
+  5. Spatial Consensus & Synoptic Coherence
+- **Consequences:** Eliminates false alarms on genuine severe weather events while maintaining high recall on true hardware and transmission faults. Preserves granular evidence structures for downstream explainability and human audit trails.
+
+---
+
+## ADR-010: Explicit UNCERTAIN Operational State for Ambiguous Telemetry
+- **Status:** Accepted
+- **Context:** In operational meteorology, forcing every borderline anomaly into either `NORMAL` or `PROBABLE_SENSOR_ANOMALY` when spatial neighbors are sparse, offline, or contradictory causes operational churn or dangerous false negatives.
+- **Decision:** The decision engine supports a first-class `UNCERTAIN` classification with actionable reason codes (`ISOLATED_ANOMALY_SPARSE_NETWORK`, `BORDERLINE_ML_WEAK_CORROBORATION`, `CONTRADICTORY_EVIDENCE_SPATIAL_VS_TEMPORAL`).
+- **Consequences:** Alerts AWS maintenance dispatchers that secondary verification (e.g. manual review, satellite/radar cross-referencing) is required before dispatching physical field crews.

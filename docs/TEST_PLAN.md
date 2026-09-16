@@ -81,10 +81,29 @@ Phase 4 tests verify:
 
 ---
 
-## 8. Test Commands
+## 8. Phase 5 Test Suite (Hybrid Decision Engine)
+Phase 5 tests verify:
+- **`test_hybrid_evidence.py`**: Pydantic schema validation of unflattened evidence domains (`DataQualityEvidence`, `SingleStationMLEvidence`, `TemporalEvidence`, `MultivariateEvidence`, `SpatialSynopticEvidence`, `ObservationEvidence`, `HybridDecision`), evidence states (`SUPPORTS`, `CONTRADICTS`, `NEUTRAL`, `UNAVAILABLE`), and decision severities.
+- **`test_hybrid_decision_engine.py`**: Comprehensive gate-by-gate rule evaluation verifying:
+  - Gate 1: Priority of telemetry and missingness data quality failures (`PROBABLE_DATA_QUALITY_ISSUE`).
+  - Gate 2: Planetary physical limit boundary violations (`PROBABLE_SENSOR_ANOMALY`).
+  - Gate 3: Persistent sensor flatlining across diurnal cycles (`PROBABLE_SENSOR_ANOMALY`).
+  - Gate 4: Thermodynamic physical constraint violations ($T_d > T$, $RH=100\%$ with diverging vapor pressure).
+  - Gate 5: Spatial-ML synergy (coherent genuine regional events vs. locally isolated hardware spikes/drifts).
+  - Gate 6: Uncertainty arbitration under sparse/offline neighbor topologies (`UNCERTAIN`).
+  - Gate 7: Nominal dynamic fallback (`NORMAL`).
+- **`test_hybrid_scenarios.py`**: End-to-end operational verification across canonical Scenarios A through H with exact reason code and SOP action validation.
+- **`test_hybrid_edge_cases.py`**: 15 boundary and edge conditions including zero anomaly scores, extreme out-of-scale scores, contradictory spatial vs temporal signals, all-neighbors-missing scenarios, zero-variance networks, and missing optional evidence domains.
+
+---
+
+## 9. Test Commands
 ```bash
-# Run full unit test suite (Phases 0, 1, 2, 3, 4)
+# Run full unit test suite (Phases 0, 1, 2, 3, 4, 5)
 pytest -v tests/unit/
+
+# Run specific Phase 5 Hybrid Decision Engine tests
+pytest -v tests/unit/test_hybrid_evidence.py tests/unit/test_hybrid_decision_engine.py tests/unit/test_hybrid_scenarios.py tests/unit/test_hybrid_edge_cases.py
 
 # Run specific Phase 4 spatial context tests
 pytest -v tests/unit/test_spatial_topology.py tests/unit/test_spatial_engine.py tests/unit/test_spatial_scenarios.py tests/unit/test_spatial_edge_cases.py

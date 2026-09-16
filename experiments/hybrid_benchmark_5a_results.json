@@ -1,0 +1,542 @@
+{
+  "metadata": {
+    "total_records": 5760,
+    "stations_count": 8,
+    "start_time": "2024-01-01 00:00:00+00:00",
+    "end_time": "2024-01-30 23:00:00+00:00"
+  },
+  "evaluation_classes": {
+    "results": {
+      "A_NORMAL": {
+        "decision": "NORMAL",
+        "expected": "NORMAL",
+        "severity": "INFO",
+        "reasons": [
+          "NOMINAL_OBSERVATION"
+        ],
+        "is_correct": true
+      },
+      "B_LOCAL_SENSOR_SPIKE": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "HIGH",
+        "reasons": [
+          "ML_HIGH_ANOMALY_SCORE",
+          "LOCAL_SPATIAL_ISOLATION"
+        ],
+        "is_correct": true
+      },
+      "C_SMALL_SENSOR_SPIKE": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "MEDIUM",
+        "reasons": [
+          "ML_MODERATE_ANOMALY_SCORE",
+          "LOCAL_SPATIAL_ISOLATION"
+        ],
+        "is_correct": true
+      },
+      "D_SENSOR_DRIFT": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "MEDIUM",
+        "reasons": [
+          "ML_MODERATE_ANOMALY_SCORE",
+          "LOCAL_SPATIAL_ISOLATION"
+        ],
+        "is_correct": true
+      },
+      "E_FROZEN_SENSOR": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "HIGH",
+        "reasons": [
+          "PERSISTENT_VALUE"
+        ],
+        "is_correct": true
+      },
+      "F_MULTIVARIATE_INCONSISTENCY": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "MEDIUM",
+        "reasons": [
+          "MULTIVARIATE_DEVIATION"
+        ],
+        "is_correct": true
+      },
+      "G_REGIONAL_EVENT": {
+        "decision": "POSSIBLE_GENUINE_EVENT",
+        "expected": "POSSIBLE_GENUINE_EVENT",
+        "severity": "LOW",
+        "reasons": [
+          "ML_HIGH_ANOMALY_SCORE",
+          "REGIONAL_SPATIAL_AGREEMENT",
+          "RAPID_RATE_OF_CHANGE"
+        ],
+        "is_correct": true
+      },
+      "H_REGIONAL_EVENT_PLUS_LOCAL_FAULT": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "PROBABLE_SENSOR_ANOMALY",
+        "severity": "HIGH",
+        "reasons": [
+          "ML_HIGH_ANOMALY_SCORE",
+          "MIXED_REGIONAL_EVENT_WITH_LOCAL_EXCESS",
+          "REGIONAL_SPATIAL_AGREEMENT"
+        ],
+        "is_correct": true
+      },
+      "I_DATA_QUALITY_FAILURE": {
+        "decision": "PROBABLE_DATA_QUALITY_ISSUE",
+        "expected": "PROBABLE_DATA_QUALITY_ISSUE",
+        "severity": "HIGH",
+        "reasons": [
+          "MISSING_REQUIRED_VARIABLES",
+          "DATA_GAP"
+        ],
+        "is_correct": true
+      },
+      "J_SPARSE_NETWORK": {
+        "decision": "UNCERTAIN",
+        "expected": "UNCERTAIN",
+        "severity": "MEDIUM",
+        "reasons": [
+          "ML_MODERATE_ANOMALY_SCORE",
+          "INSUFFICIENT_SPATIAL_CONTEXT",
+          "CONFLICTING_EVIDENCE"
+        ],
+        "is_correct": true
+      },
+      "K_CONFLICTING_EVIDENCE": {
+        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "expected": "UNCERTAIN",
+        "severity": "MEDIUM",
+        "reasons": [
+          "LOCAL_SPATIAL_ISOLATION"
+        ],
+        "is_correct": false
+      }
+    },
+    "accuracy": 0.9090909090909091,
+    "total": 11,
+    "correct": 10
+  },
+  "consensus_matrix": {
+    "Case_1_Target_Anom_5_of_5_Abnormal": {
+      "context_category": "REGIONAL_PATTERN",
+      "decision": "POSSIBLE_GENUINE_EVENT",
+      "severity": "LOW",
+      "reason_codes": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "REGIONAL_SPATIAL_AGREEMENT",
+        "RAPID_RATE_OF_CHANGE"
+      ]
+    },
+    "Case_2_Target_Anom_4_of_5_Abnormal": {
+      "context_category": "REGIONAL_PATTERN",
+      "decision": "POSSIBLE_GENUINE_EVENT",
+      "severity": "LOW",
+      "reason_codes": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "REGIONAL_SPATIAL_AGREEMENT",
+        "RAPID_RATE_OF_CHANGE"
+      ]
+    },
+    "Case_3_Target_Anom_2_of_5_Abnormal": {
+      "context_category": "LOCAL_CLUSTER",
+      "decision": "POSSIBLE_GENUINE_EVENT",
+      "severity": "LOW",
+      "reason_codes": [
+        "LOCAL_CLUSTER_AGREEMENT"
+      ]
+    },
+    "Case_4_Target_Anom_1_of_5_Abnormal": {
+      "context_category": "LOCAL_ONLY",
+      "decision": "PROBABLE_SENSOR_ANOMALY",
+      "severity": "MEDIUM",
+      "reason_codes": [
+        "ML_MODERATE_ANOMALY_SCORE",
+        "LOCAL_SPATIAL_ISOLATION"
+      ]
+    },
+    "Case_5_Target_Anom_0_of_5_Abnormal": {
+      "context_category": "LOCAL_ONLY",
+      "decision": "PROBABLE_SENSOR_ANOMALY",
+      "severity": "HIGH",
+      "reason_codes": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "LOCAL_SPATIAL_ISOLATION"
+      ]
+    },
+    "Case_6_Target_Anom_No_Neighbors": {
+      "context_category": "INSUFFICIENT_CONTEXT",
+      "decision": "UNCERTAIN",
+      "severity": "MEDIUM",
+      "reason_codes": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "INSUFFICIENT_SPATIAL_CONTEXT",
+        "CONFLICTING_EVIDENCE"
+      ]
+    },
+    "Case_7_Target_Anom_Neighbors_Disagree": {
+      "context_category": "INSUFFICIENT_CONTEXT",
+      "decision": "UNCERTAIN",
+      "severity": "MEDIUM",
+      "reason_codes": [
+        "INSUFFICIENT_SPATIAL_CONTEXT",
+        "CONFLICTING_EVIDENCE"
+      ]
+    }
+  },
+  "station_benchmark": {
+    "42027099999": {
+      "name": "Srinagar",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 0,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 720,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "MEDIUM": 720
+      },
+      "reasons": {},
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 0,
+          "ANOMALY": 390,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 0,
+          "ANOMALY": 330,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "42182099999": {
+      "name": "New Delhi (Safdarjung)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "42339099999": {
+      "name": "Jodhpur",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "42809099999": {
+      "name": "Kolkata (Dum Dum/NSCBI)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "42867099999": {
+      "name": "Nagpur (Sonegaon)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "43003099999": {
+      "name": "Mumbai (Santacruz)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "43279099999": {
+      "name": "Chennai (Meenambakkam)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    },
+    "43295099999": {
+      "name": "Bengaluru (HAL Airport)",
+      "total_observations": 720,
+      "decisions": {
+        "NORMAL": 720,
+        "POSSIBLE_GENUINE_EVENT": 0,
+        "PROBABLE_SENSOR_ANOMALY": 0,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
+        "UNCERTAIN": 0
+      },
+      "severities": {
+        "NOMINAL": 0,
+        "ADVISORY": 0,
+        "WARNING": 0,
+        "CRITICAL": 0,
+        "INFO": 720
+      },
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
+      "diurnal": {
+        "DAY": {
+          "NORMAL": 390,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        },
+        "NIGHT": {
+          "NORMAL": 330,
+          "ANOMALY": 0,
+          "EVENT": 0,
+          "UNCERTAIN": 0
+        }
+      }
+    }
+  },
+  "conflicting_evidence": {
+    "Conflict_1_ML_Strong_Spatial_Regional_Temp_Weak": {
+      "decision": "POSSIBLE_GENUINE_EVENT",
+      "severity": "LOW",
+      "reasons": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "REGIONAL_SPATIAL_AGREEMENT"
+      ]
+    },
+    "Conflict_2_ML_Moderate_Spatial_Local_Temp_Strong": {
+      "decision": "PROBABLE_SENSOR_ANOMALY",
+      "severity": "MEDIUM",
+      "reasons": [
+        "LOCAL_SPATIAL_ISOLATION"
+      ]
+    },
+    "Conflict_3_ML_Strong_Spatial_Unavailable": {
+      "decision": "UNCERTAIN",
+      "severity": "MEDIUM",
+      "reasons": [
+        "ML_HIGH_ANOMALY_SCORE",
+        "INSUFFICIENT_SPATIAL_CONTEXT",
+        "CONFLICTING_EVIDENCE"
+      ]
+    },
+    "Conflict_4_ML_Weak_Spatial_Anomaly_Strong": {
+      "decision": "NORMAL",
+      "severity": "INFO",
+      "reasons": [
+        "NOMINAL_OBSERVATION"
+      ]
+    }
+  },
+  "configuration_sensitivity": {
+    "ml_threshold_sweep": {
+      "0.5": "PROBABLE_SENSOR_ANOMALY",
+      "0.6": "PROBABLE_SENSOR_ANOMALY",
+      "0.65": "PROBABLE_SENSOR_ANOMALY",
+      "0.7": "PROBABLE_SENSOR_ANOMALY",
+      "0.8": "PROBABLE_SENSOR_ANOMALY",
+      "0.85": "PROBABLE_SENSOR_ANOMALY"
+    },
+    "spatial_deviation_sweep": {
+      "1.5": "PROBABLE_SENSOR_ANOMALY",
+      "2.0": "PROBABLE_SENSOR_ANOMALY",
+      "2.5": "PROBABLE_SENSOR_ANOMALY",
+      "3.0": "PROBABLE_SENSOR_ANOMALY",
+      "4.0": "PROBABLE_SENSOR_ANOMALY",
+      "5.0": "PROBABLE_SENSOR_ANOMALY"
+    }
+  },
+  "causality_verification": {
+    "status": "PASSED",
+    "t0_decision_before": "PROBABLE_SENSOR_ANOMALY",
+    "t0_decision_after": "PROBABLE_SENSOR_ANOMALY",
+    "invariance_confirmed": true
+  },
+  "overall_metrics": {
+    "total_observations": 5760,
+    "normal_count": 5040,
+    "normal_pct": 87.5,
+    "sensor_anomaly_count": 0,
+    "sensor_anomaly_pct": 0.0,
+    "genuine_event_count": 0,
+    "genuine_event_pct": 0.0,
+    "data_quality_count": 720,
+    "data_quality_pct": 12.5,
+    "uncertain_count": 0,
+    "uncertain_pct": 0.0,
+    "clean_baseline_fpr": 0.0
+  }
+}
