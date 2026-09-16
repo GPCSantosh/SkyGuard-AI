@@ -106,12 +106,23 @@ Phase 6A tests verify:
 
 ---
 
-## 10. Test Commands
+## 10. Phase 6B Test Suite (Sensor Health & Degradation Monitoring)
+Phase 6B tests verify:
+- **`test_health_schema.py`**: Pydantic schema validation for `SensorHealthSummary`, `ComponentHealthScores`, `ParameterHealth`, `HealthStatusBand`, `HealthTrend`, `MaintenanceRecommendation`, and immutability guarantees.
+- **`test_health_components.py`**: Extraction of anomaly frequency, data quality defects, communication gaps, temporal flatlines, drift metrics, and exponential recency weighting ($w_t = \exp(-\lambda \cdot \text{age})$).
+- **`test_health_engine.py`**: Composite 0-100 score formulation, health band mapping, trend determination, parameter-level channel isolation, and deterministic repeatability.
+- **`test_health_scenarios.py`**: Controlled benchmark testing across synthetic Scenarios A through H (Healthy, Spikes, Drift, Flatline, Comms, Mixed, Recovery, and Regional Event Protection).
+- **`test_health_edge_cases.py`**: Low-data handling ($N < 12 \rightarrow \text{INSUFFICIENT\_HISTORY}$), single observation, isolated station, and sudden data quality collapse.
+
+---
+
+## 11. Test Commands
 ```bash
-# Run full test suite (Phases 0 - 6A)
+# Run full test suite (Phases 0 - 6B)
 pytest -v tests/unit/
 
-# Run specific Phase 6A Explainability tests
-pytest -v tests/unit/test_explainability_shap.py tests/unit/test_explainability_neighbor.py tests/unit/test_explainability_episode.py tests/unit/test_explainability_synthesizer.py tests/unit/test_explainability_semantic_eval.py tests/unit/test_explainability_edge_cases.py
+# Run specific Phase 6B Sensor Health tests
+pytest -v tests/unit/test_health_schema.py tests/unit/test_health_components.py tests/unit/test_health_engine.py tests/unit/test_health_scenarios.py tests/unit/test_health_edge_cases.py
 ```
+
 

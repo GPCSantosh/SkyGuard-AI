@@ -72,8 +72,21 @@ Phase 5 establishes multi-evidence arbitration across the 8 canonical operationa
 
 ---
 
-## 7. Benchmark Execution Commands
-To execute the baseline benchmark, ablation study, spatial evaluation, and hybrid decision evaluation:
+## 7. Sensor Health & Degradation Benchmarking (Phase 6B)
+Phase 6B evaluates longitudinal reliability tracking across 8 operational profiles:
+- **Scenario A (Healthy Station)**: Verifies that uninterrupted nominal weather preserves a stable $90.0-100.0$ (`HEALTHY`) score with `NO_ACTION`.
+- **Scenario B (Repeated Spikes)**: Verifies that recurrent localized spikes reduce anomaly health and trigger `ATTENTION`/`INSPECT`.
+- **Scenario C (Gradual Drift)**: Verifies that progressive spatial deviation reduces spatial consistency health and triggers `INCREASING_DRIFT`.
+- **Scenario D (Frozen Sensor Flatline)**: Verifies that stuck readings reduce temporal stability health and trigger `INSPECT`.
+- **Scenario E (Communication Outages)**: Verifies that packet gaps reduce communication health and trigger `COMMUNICATION_INSTABILITY`.
+- **Scenario F (Mixed Breakdown)**: Verifies multi-component degradation dropping health to `DEGRADED`/`CRITICAL` ($< 50.0$) with `PRIORITY_INSPECTION`.
+- **Scenario G (Recovery Trend)**: Verifies that returning to normal operations elevates trend to `IMPROVING` ($\Delta H > 0$).
+- **Scenario H (Regional Event Protection)**: Verifies that network-wide squalls/fronts (`POSSIBLE_GENUINE_EVENT`) apply $0.0$ penalty and maintain `HEALTHY` ($\ge 90.0$) status.
+
+---
+
+## 8. Benchmark Execution Commands
+To execute the baseline benchmark, ablation study, spatial evaluation, hybrid decision evaluation, and sensor health evaluation:
 
 ```bash
 # 1. Main Baseline Experiment (Fixed Threshold, Rolling Z-Score, Isolation Forest)
@@ -85,10 +98,8 @@ python -m ml.experiments.run_spatial_evaluation
 # 3. Phase 5 Hybrid Decision Engine Scenario Evaluation (Scenarios A through H)
 python -m ml.experiments.run_hybrid_evaluation
 
-# 4. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
-python -c "from ml.experiments.ablation import run_ablation_study; run_ablation_study('data/processed/42182099999_2024_normalized.csv')"
-
-# 5. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
-python -c "from ml.experiments.stability import run_multi_seed_stability; run_multi_seed_stability('data/processed/42182099999_2024_normalized.csv')"
+# 4. Phase 6B Sensor Health Synthetic Benchmark (Scenarios A through H)
+pytest -v tests/unit/test_health_scenarios.py
 ```
+
 

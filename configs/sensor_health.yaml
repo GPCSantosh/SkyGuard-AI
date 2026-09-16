@@ -1,0 +1,69 @@
+# SkyGuard AI — Sensor Health & Degradation Monitoring Configuration
+# Configurable weights, time windows, recency decay, health bands, and maintenance thresholds.
+
+health_engine:
+  engine_name: "SkyGuard Sensor Health Engine"
+  version: "1.0.0"
+  min_observations_required: 12   # Minimum observations in window to produce a score (otherwise INSUFFICIENT_HISTORY)
+
+# 1. Dimension Weights (must sum to 1.0)
+weights:
+  anomaly_health: 0.30
+  data_quality_health: 0.20
+  communication_health: 0.15
+  temporal_stability_health: 0.20
+  spatial_consistency_health: 0.15
+
+# 2. Supported Time Windows (in hours)
+time_windows:
+  "24h": 24.0
+  "7d": 168.0
+  "30d": 720.0
+  default_window: "24h"
+
+# 3. Recency Weighting Parameters
+recency:
+  enabled: true
+  decay_lambda: 1.5   # Exponential decay parameter (higher = recent events weighted more heavily)
+
+# 4. Severity Penalty Multipliers
+severity_penalties:
+  INFO: 0.0
+  LOW: 0.25
+  MEDIUM: 0.60
+  HIGH: 1.00
+  CRITICAL: 2.00
+
+# 5. Health Status Bands (0-100 scale)
+health_bands:
+  HEALTHY: [90.0, 100.0]
+  GOOD: [75.0, 89.999]
+  ATTENTION: [50.0, 74.999]
+  DEGRADED: [25.0, 49.999]
+  CRITICAL: [0.0, 24.999]
+
+# 6. Trend Thresholds (delta = current - previous)
+trend:
+  improving_threshold: 3.0    # delta >= +3.0 -> IMPROVING
+  degrading_threshold: -3.0   # delta <= -3.0 -> DEGRADING
+  # Otherwise STABLE
+
+# 7. Maintenance Recommendation Triggers
+maintenance_rules:
+  priority_inspection:
+    min_health_score: 25.0    # health < 25.0
+    degrading_attention: true  # health < 50.0 AND trend == DEGRADING
+  inspect:
+    min_health_score: 50.0    # health < 50.0 OR (health < 75.0 AND trend == DEGRADING)
+  monitor:
+    min_health_score: 75.0    # health < 75.0
+  no_action:
+    min_health_score: 90.0    # health >= 75.0 AND trend != DEGRADING
+
+# 8. Component Parameters
+component_parameters:
+  flatline_penalty_per_hour: 15.0
+  drift_penalty_scale: 12.0
+  gap_penalty_scale: 10.0
+  missing_packet_penalty_scale: 8.0
+  spatial_isolation_penalty_scale: 10.0

@@ -36,7 +36,8 @@ Pure machine learning alone can fail on meteorological edge cases, and determini
 
 ### 3.2. Context & Future Pipeline Stages (Phase 4, Phase 5 & Phase 6)
 - **Stage 4: Explainability & Anomaly Investigation (Phase 6A — COMPLETED)**: Implemented in `ml/explainability/` (`ExplainabilityEngine`, `TreeShapExplainer`, `NeighborComparator`, `AnomalyEpisodeReconstructor`, `ExplanationSynthesizer`, `ExplanationSemanticEvaluator`). Generates deterministic 4-tier evidence hierarchies, real TreeSHAP feature attributions on Isolation Forest, strictly causal neighbor comparisons, episode lifecycle timelines, and verified semantic explanations.
-- **Stage 5: Composite Sensor Health Indexing (Phase 6B)**: Continuous 0-100 degradation scoring, transducer calibration drift tracking, and maintenance forecasting.
+- **Stage 5: Composite Sensor Health Indexing (Phase 6B — COMPLETED)**: Implemented in `ml/health/` (`SensorHealthEngine`, `HealthFeatureExtractor`, `HealthHistoryBuffer`, `HealthScenarioEvaluator`). Computes continuous 0-100 degradation scoring, 5-dimensional sub-scores, parameter-level channel breakdowns, trend trajectories, and actionable maintenance SOP recommendations.
+
 
 
 ---

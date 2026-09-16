@@ -14,6 +14,9 @@
 | ADR-008 | Causal Neighbor Alignment with Strict Forward-Time Exclusion | Accepted | 2026-09-16 |
 | ADR-009 | Hierarchical Multi-Evidence Arbitration for Anomaly Decisions | Accepted | 2026-09-17 |
 | ADR-010 | Explicit UNCERTAIN Operational State for Ambiguous Telemetry | Accepted | 2026-09-17 |
+| ADR-011 | Empirical Sensor Health Indexing over Failure Probability Claims | Accepted | 2026-09-17 |
+| ADR-012 | Regional Weather Event Protection in Health Degradation Tracking | Accepted | 2026-09-17 |
+
 
 ---
 
@@ -99,3 +102,20 @@
 - **Context:** In operational meteorology, forcing every borderline anomaly into either `NORMAL` or `PROBABLE_SENSOR_ANOMALY` when spatial neighbors are sparse, offline, or contradictory causes operational churn or dangerous false negatives.
 - **Decision:** The decision engine supports a first-class `UNCERTAIN` classification with actionable reason codes (`ISOLATED_ANOMALY_SPARSE_NETWORK`, `BORDERLINE_ML_WEAK_CORROBORATION`, `CONTRADICTORY_EVIDENCE_SPATIAL_VS_TEMPORAL`).
 - **Consequences:** Alerts AWS maintenance dispatchers that secondary verification (e.g. manual review, satellite/radar cross-referencing) is required before dispatching physical field crews.
+
+---
+
+## ADR-011: Empirical Sensor Health Indexing over Failure Probability Claims
+- **Status:** Accepted
+- **Context:** Representing sensor health as an uncalibrated "failure probability" (e.g., "80% chance of failing") creates false precision and violates meteorological engineering integrity.
+- **Decision:** Implement a transparent, composite 0–100 **Sensor Health Index** decomposed into 5 traceable sub-dimensions (Anomaly, Data Quality, Communication, Temporal Stability, Spatial Consistency) and actionable maintenance SOP tiers (`NO_ACTION`, `MONITOR`, `INSPECT`, `PRIORITY_INSPECTION`).
+- **Consequences:** Provides actionable, transparent operational reliability tracking without unverified predictive claims.
+
+---
+
+## ADR-012: Regional Weather Event Protection in Health Degradation Tracking
+- **Status:** Accepted
+- **Context:** Severe synoptic weather events (e.g., convective squall lines, microbursts, heatwaves) produce rapid rate changes and high anomaly scores across multiple stations. Penalizing sensor health during genuine storms would cause the entire regional AWS network to falsely report as degraded.
+- **Decision:** When the hybrid decision engine classifies an observation as `POSSIBLE_GENUINE_EVENT`, the health engine explicitly applies a **0.0 penalty**, preserving the station's health index.
+- **Consequences:** Prevents genuine extreme meteorological events from triggering false maintenance inspection alerts.
+
