@@ -137,4 +137,18 @@
 - **Decision:** All candidate multi-variable correction bundles must pass an integrated thermodynamic and hypsometric validation suite before submission. Any physical contradiction automatically downgrades the recommendation status to `REVIEW_RECOMMENDED`.
 - **Consequences:** Ensures that no model-derived repair proposal violates physical and meteorological laws.
 
+---
 
+## ADR-015: Bounded In-Memory Real-Time State Buffer & Strict Causal Isolation
+- **Status:** Accepted
+- **Context:** Real-time streaming AWS data ingestion requires low latency ($<10\text{ ms}$) without uncontrolled memory growth over multi-month operations, while guaranteeing that past rolling statistics do not leak future data.
+- **Decision:** Implement per-station `StationStateBuffer` using bounded double-ended queues (`deque(maxlen=120)`), idempotent identity hashing, and strict causal filtering ($t \le T$) for temporal feature extraction and contemporaneous spatial pooling.
+- **Consequences:** Caps per-station memory consumption to constant bounds while ensuring 100% mathematical parity with offline batch processing.
+
+---
+
+## ADR-016: Deterministic Streaming Replay Simulator with Synchronous Stepping
+- **Status:** Accepted
+- **Context:** Automated end-to-end integration tests and operational simulations must test high-velocity streaming scenarios without requiring live external AWS connections or nondeterministic network waits.
+- **Decision:** Implement `StreamReplayEngine` capable of variable speed streaming ($1\times$ to $\infty$) and deterministic synchronous stepping (`run_synchronous_simulation`), with non-leaking synthetic anomaly injection for ground-truth benchmarking.
+- **Consequences:** Provides fast, repeatable, and robust verification of the complete real-time processing and API stack.

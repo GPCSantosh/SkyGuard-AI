@@ -127,14 +127,24 @@ Phase 7 tests verify:
 
 ---
 
-## 12. Test Commands
+---
+
+## 12. Phase 8 Test Suite (Real-Time Architecture & REST Service Contract)
+Phase 8 tests verify:
+- **`test_realtime_state.py`**: Bounded ring buffer memory management (`max_retention=120`), timestamp ordering validation, out-of-order packet warnings, duplicate packet idempotency deduplication, future timestamp checks, and causal history slicing ($t \le T$).
+- **`test_database_repository.py`**: Thread-safe in-memory database storage, station registration, live snapshot updating, multi-field filtering (`decision`, `severity`, `time_range`), and pagination metadata.
+- **`test_realtime_engine.py`**: End-to-end single `WeatherObservation` processing, feature extraction parity, ML inference scoring, spatial neighbor context pooling, hybrid decision arbitration, sensor health updates, advisory correction synthesis, and fallback resilience under simulated ML model crashes.
+- **`test_replay_simulator.py`**: Replay streaming from historical DataFrames, variable playback speeds, deterministic synchronous simulation stepping, and synthetic fault injection with isolated ground-truth labels.
+- **`test_api_endpoints.py`**: FastAPI REST API integration tests covering `/observations/process`, `/stations`, `/stations/{id}/latest`, `/stations/{id}/history`, `/stations/{id}/health`, `/anomalies`, `/anomalies/{id}/explanation`, `/system/health`, and `/replay/status`.
+- **`test_20_station_load.py`**: 20-station simulated continuous streaming and 100-packet burst load performance benchmark verifying p95 latency $<15\text{ ms}$ and memory stability.
+
+---
+
+## 13. Test Commands
 ```bash
-# Run full test suite (Phases 0 - 7)
+# Run full test suite (Phases 0 - 8, 241+ tests)
 pytest -v
 
-# Run specific Phase 7 Imputation & Correction tests
-pytest -v tests/unit/test_imputation_schema.py tests/unit/test_missing_data_imputer.py tests/unit/test_correction_engine.py tests/unit/test_multivariate_consistency.py tests/unit/test_imputation_edge_cases.py tests/unit/test_imputation_evaluation.py
-
-# Run specific Phase 6B Sensor Health tests
-pytest -v tests/unit/test_health_schema.py tests/unit/test_health_components.py tests/unit/test_health_engine.py tests/unit/test_health_scenarios.py tests/unit/test_health_edge_cases.py
+# Run specific Phase 8 Real-Time tests
+pytest -v tests/unit/test_realtime_state.py tests/unit/test_database_repository.py tests/unit/test_realtime_engine.py tests/unit/test_replay_simulator.py tests/integration/test_api_endpoints.py tests/performance/test_20_station_load.py
 ```

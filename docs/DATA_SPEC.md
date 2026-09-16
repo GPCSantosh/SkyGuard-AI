@@ -144,6 +144,39 @@ To determine spatial consistency between Station $A (\phi_1, \lambda_1)$ and Sta
 
 ---
 
-## 7. Dataset Selection Status
-*Status: TBD — requires historical dataset selection during Phase 1.*
-Supported historical ingestion formats will include standard IMD/WMO AWS CSV structures, NetCDF, and JSON telemetry archives.
+---
+
+## 7. Real-Time Processing Schemas (`backend/app/models/processing.py`)
+
+### 7.1. `ProcessingResult`
+The unified synchronous result produced for each ingested telemetry packet:
+- `observation`: The canonical `WeatherObservation`.
+- `status`: `ProcessingStatus` (`PROCESSED`, `DUPLICATE_SKIPPED`, `OUT_OF_ORDER`, `FUTURE_TIMESTAMP`, `ERROR`).
+- `event_id`: Optional unique identifier for detected anomaly events (`ANOM-YYYYMMDD-STN-NNNN`).
+- `hybrid_decision`: Complete `HybridDecision` output from multi-gate arbitration.
+- `explanation`: Full `ExplanationSummary` including SHAP feature contributions and natural language summary.
+- `sensor_health`: `SensorHealthSummary` with 0–100 composite index and maintenance SOP action.
+- `correction_recommendation`: Optional candidate repair `CorrectionRecommendation`.
+- `latency`: `ProcessingLatencyBreakdown` detailing per-stage latency in milliseconds.
+- `provenance`: Audit metadata dictionary detailing model, feature, decision, health, and imputation versions.
+- `processed_at`: ISO UTC timestamp of pipeline completion.
+
+### 7.2. `ProcessingLatencyBreakdown`
+Sub-millisecond profiling metrics:
+- `ingestion_latency_ms`: Ingestion, deduplication, and watermark validation time.
+- `validation_latency_ms`: Physical range and formatting checks.
+- `feature_latency_ms`: Causal feature generation and cyclic harmonics.
+- `ml_latency_ms`: ML anomaly inference scoring.
+- `spatial_latency_ms`: Contemporaneous neighbor pooling and spatial consensus.
+- `decision_latency_ms`: Hybrid multi-gate decision arbitration.
+- `explanation_latency_ms`: Feature attribution synthesis.
+- `health_latency_ms`: Rolling health degradation tracking.
+- `correction_latency_ms`: Imputation / candidate correction generation.
+- `persistence_latency_ms`: In-memory repository record storage.
+- `total_pipeline_latency_ms`: End-to-end processing time per packet.
+
+---
+
+## 8. Dataset Selection Status
+Supported historical ingestion formats include standard IMD/WMO AWS CSV structures, NOAA ISD hourly archives, and JSON telemetry streams.
+

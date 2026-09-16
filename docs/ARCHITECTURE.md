@@ -197,10 +197,26 @@ Supported Connector Types:
 
 ---
 
-## 12. Future Edge Architecture
+## 12. Real-Time Streaming Engine & Pipeline Architecture
+The real-time streaming layer processes individual `WeatherObservation` packets through an integrated 8-stage synchronous pipeline in $<10\text{ ms}$:
+1. **Ingestion & Idempotency**: `StationStateBuffer` with bounded ring buffer (`maxlen=120`) and deduplication hashing.
+2. **Causal Feature Extraction**: Rolling statistics and cyclic harmonics sliced strictly on or before observation timestamp ($t \le T$).
+3. **ML Inference & Fallback**: Calibrated Isolation Forest scoring with automatic fallback to pure rule mode upon model exceptions.
+4. **Contemporaneous Spatial Context**: Geodesic neighbor query within temporal tolerance.
+5. **Multi-Gate Hybrid Decision**: Rule-based arbitration producing classifications, severity, and reason codes.
+6. **Feature Contribution / XAI**: SHAP-ranked feature contributions and natural language operator summary.
+7. **Sensor Health Degradation**: Rolling 0–100 composite index and maintenance SOP action recommendation.
+8. **Advisory Imputation & Non-Destructive Storage**: Candidate values calculated and saved without mutating raw sensor data.
+
+See [`docs/REALTIME_ARCHITECTURE.md`](file:///d:/Projects/sih_project/docs/REALTIME_ARCHITECTURE.md) for full architectural details.
+
+---
+
+## 13. Future Edge Architecture
 - *(Reserved for future phases)*
 - Quantized edge anomaly inference (ONNX Runtime / TFLite Micro).
 - Local SQLite buffering during communication outages with guaranteed catch-up sync.
+
 
 ---
 

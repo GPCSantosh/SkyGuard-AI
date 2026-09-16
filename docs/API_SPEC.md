@@ -1,106 +1,86 @@
 # SkyGuard AI — API Specification (FastAPI / REST)
 
 ## 1. Overview & Principles
-The SkyGuard AI backend exposes a RESTful API built with **FastAPI**. All requests and responses are strictly validated via Pydantic v2 schemas.
+The SkyGuard AI backend exposes a high-performance RESTful streaming API built with **FastAPI**. All requests and responses are strictly validated via Pydantic v2 schemas and conform to uniform pagination and error conventions.
 
 - **Base URL Prefix**: `/api/v1`
 - **Content Type**: `application/json`
-- **Error Format**: Uniform RFC 7807 problem details structure.
-- **Authentication**: Bearer Token / API Key (Configurable; disabled in local development mode).
+- **OpenAPI / Swagger UI**: Available at `/docs` or `/redoc`
+- **Architecture**: Sub-10ms synchronous processing pipeline with non-destructive in-memory repository persistence.
 
 ---
 
 ## 2. API Endpoints
 
-### 2.1. Ingestion Endpoints
-#### `POST /api/v1/ingest/observation`
-Ingest a single normalized weather observation record.
-- **Request Body**: `WeatherObservation`
-- **Responses**:
-  - `201 Created`: Observation accepted and queued for QC/analysis.
-  - `422 Unprocessable Entity`: Schema or range validation error.
+### 2.1. Real-Time Processing Endpoints (`/observations`)
 
-#### `POST /api/v1/ingest/batch`
-Ingest a batch of weather observation records.
+#### `POST /api/v1/observations/process`
+Process a single telemetry packet synchronously through the analytical pipeline.
+- **Request Body**: `WeatherObservation`
+- **Response**: `ProcessingResult` (contains `HybridDecision`, `SensorHealthSummary`, `ExplanationSummary`, `CorrectionRecommendation`, and `ProcessingLatencyBreakdown`).
+
+#### `POST /api/v1/observations/batch`
+Process a sequence of observations in causal order.
 - **Request Body**: `list[WeatherObservation]`
-- **Responses**:
-  - `200 OK`: Returns batch summary (`accepted_count`, `rejected_count`, `errors`).
+- **Response**: `list[ProcessingResult]`
 
 ---
 
-### 2.2. Station & Network Endpoints
+### 2.2. Stations & Telemetry Endpoints (`/stations`)
+
 #### `GET /api/v1/stations`
-Retrieve list of registered weather stations with latest status.
-- **Query Params**: `status` (optional), `state` (optional), `limit` (default: 100).
-- **Response**: `list[StationMetadataResponse]`
+Retrieve all monitored AWS stations with geodetic coordinates and operational status.
+- **Response**: `list[dict]`
 
 #### `GET /api/v1/stations/{station_id}`
-Retrieve station metadata, installed sensors, and geographic coordinates.
+Retrieve station metadata and coordinate details.
 
-#### `GET /api/v1/stations/{station_id}/neighbors`
-Retrieve spatial neighbor stations ordered by geodetic distance.
-- **Query Params**: `radius_km` (default: 150), `max_neighbors` (default: 5).
+#### `GET /api/v1/stations/{station_id}/latest`
+Retrieve the latest cached snapshot and weather parameters for a specific station.
+- **Response**: `LiveStationSnapshot`
 
----
+#### `GET /api/v1/stations/{station_id}/history`
+Retrieve chronological observation history with optional timestamp filtering and pagination.
+- **Query Params**: `start_time`, `end_time`, `limit` (1..1000), `offset` (0..)
+- **Response**: `PaginatedResponse[WeatherObservation]`
 
-### 2.3. Telemetry & Observation Endpoints
-#### `GET /api/v1/stations/{station_id}/observations`
-Retrieve historical observations (raw + quality flags + model-imputed values).
-- **Query Params**:
-  - `start_time` (ISO-8601 UTC)
-  - `end_time` (ISO-8601 UTC)
-  - `include_imputed` (boolean, default: true)
-  - `parameter` (`temperature` | `pressure` | `humidity` | `all`)
-- **Response**: Time-series array of multi-parameter readings.
-
----
-
-### 2.4. Anomalies & Quality Diagnostics Endpoints
-#### `GET /api/v1/anomalies`
-Query system-wide detected anomalies across the network.
-- **Query Params**:
-  - `severity` (`LOW` | `MEDIUM` | `HIGH` | `CRITICAL`)
-  - `category` (15-category taxonomy enum)
-  - `station_id` (optional)
-  - `start_time`, `end_time`
-- **Response**: Paginated list of anomaly events with root-cause and confidence.
-
-#### `GET /api/v1/anomalies/{anomaly_id}/explain`
-Retrieve local feature attribution and SHAP explanation for a specific anomaly event.
-
----
-
-### 2.5. Sensor Health & Operations Endpoints
 #### `GET /api/v1/stations/{station_id}/health`
-Retrieve current sensor health index (0–100 scale), uptime, drift metrics, and failure probabilities.
-
-#### `GET /api/v1/network/summary`
-Retrieve high-level network operational overview (Total active stations, healthy vs degraded count, active critical anomalies, network data completeness %).
+Retrieve the latest rolling sensor health index, sub-dimension scores, and maintenance SOP action.
+- **Response**: `SensorHealthSummary`
 
 ---
 
-## 3. Standard Response & Error Schemas
+### 2.3. Anomalies & Explainability Endpoints (`/anomalies`)
 
-### Standard Success Wrapper
-```json
-{
-  "status": "success",
-  "data": {},
-  "timestamp": "2026-09-16T22:30:00Z"
-}
-```
+#### `GET /api/v1/anomalies`
+Query detected anomaly events across stations with multi-criteria filtering and pagination.
+- **Query Params**: `station_id`, `decision`, `severity`, `start_time`, `end_time`, `limit`, `offset`
+- **Response**: `PaginatedResponse[AnomalyEventRecord]`
 
-### Standard Error Schema
-```json
-{
-  "status": "error",
-  "error_code": "INVALID_MEASUREMENT_RANGE",
-  "message": "Temperature reading 95.0°C exceeds physical maximum threshold of 60.0°C.",
-  "details": {
-    "parameter": "temperature",
-    "value": 95.0,
-    "valid_range": [-50.0, 60.0]
-  },
-  "timestamp": "2026-09-16T22:30:00Z"
-}
-```
+#### `GET /api/v1/anomalies/{event_id}`
+Retrieve comprehensive details for a specific anomaly event record.
+- **Response**: `AnomalyEventRecord`
+
+#### `GET /api/v1/anomalies/{event_id}/explanation`
+Retrieve full SHAP / rule-based feature contributions and natural language operator summary.
+- **Response**: `ExplanationSummary`
+
+---
+
+### 2.4. System Diagnostics Endpoints (`/system`)
+
+#### `GET /api/v1/system/health`
+Retrieve end-to-end health status of the backend, repository, ML models, and latency metrics.
+- **Response**: `SystemHealthStatus`
+
+---
+
+### 2.5. Streaming Replay Endpoints (`/replay`)
+
+#### `GET /api/v1/replay/status`
+Inspect current status of the streaming replay simulator.
+
+#### `POST /api/v1/replay/step`
+Execute a synchronous simulation step forward across queued historical observations.
+- **Query Params**: `steps` (default: 1)
+- **Response**: `list[ProcessingResult]`
