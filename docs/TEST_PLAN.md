@@ -116,13 +116,25 @@ Phase 6B tests verify:
 
 ---
 
-## 11. Test Commands
+## 11. Phase 7 Test Suite (Data Imputation & Correction Recommendation)
+Phase 7 tests verify:
+- **`test_imputation_schema.py`**: Pydantic schema validation for `ImputationRecord`, `CorrectionRecommendation`, `UncertaintyEstimate`, `MultivariateCorrectionBundle`, enums (`ImputationStatus`, `RecommendationStatus`, `EstimationMethod`, `MethodQuality`), and frozen immutability.
+- **`test_missing_data_imputer.py`**: Short-gap causal imputation ($\le 60$ min), long-gap rejection ($> 60$ min $\rightarrow \text{NOT\_IMPUTABLE}$), retrospective two-sided interpolation, spatial IDW consensus assistance, and series sequence imputation.
+- **`test_correction_engine.py`**: Candidate correction recommendation generation, regional event protection (`POSSIBLE_GENUINE_EVENT` $\rightarrow \text{NO\_CORRECTION\_RECOMMENDED}$), clean data protection (`NORMAL` $\rightarrow \text{NO\_CORRECTION\_RECOMMENDED}$), sensor health degradation integration, uncertainty calculation ($95\%$ bounds), and provenance metadata.
+- **`test_multivariate_consistency.py`**: Joint physical validation of multi-variable states (thermodynamic $T \ge T_d$ check, $RH$ vs vapor pressure agreement, hypsometric station vs sea-level pressure reduction), and bundle status downgrading upon physical inconsistency.
+- **`test_imputation_edge_cases.py`**: Edge case handling across stale neighbors, high-variance conflicting neighbors, frozen flatlines, linear drift, extreme unphysical values, and multi-channel failures.
+- **`test_imputation_evaluation.py`**: Quantitative synthetic anomaly reconstruction error benchmark (MAE, RMSE, coverage), clean data protection evaluation ($0.0\%$ unnecessary corrections), and JSONL non-destructive storage persistence in `data/corrections/`.
+
+---
+
+## 12. Test Commands
 ```bash
-# Run full test suite (Phases 0 - 6B)
-pytest -v tests/unit/
+# Run full test suite (Phases 0 - 7)
+pytest -v
+
+# Run specific Phase 7 Imputation & Correction tests
+pytest -v tests/unit/test_imputation_schema.py tests/unit/test_missing_data_imputer.py tests/unit/test_correction_engine.py tests/unit/test_multivariate_consistency.py tests/unit/test_imputation_edge_cases.py tests/unit/test_imputation_evaluation.py
 
 # Run specific Phase 6B Sensor Health tests
 pytest -v tests/unit/test_health_schema.py tests/unit/test_health_components.py tests/unit/test_health_engine.py tests/unit/test_health_scenarios.py tests/unit/test_health_edge_cases.py
 ```
-
-

@@ -1,0 +1,66 @@
+# SkyGuard AI — Data Imputation & Correction Recommendation Configuration
+# Controls gap-length safety, neighbor consensus thresholds, uncertainty models,
+# multivariate physical validation, and regional-event protection.
+
+imputation:
+  max_interpolation_gap_minutes: 60.0    # Gaps longer than 60m are marked NOT_IMPUTABLE
+  max_consecutive_missing_steps: 12      # At 5-min intervals, 12 steps = 60m
+  default_mode: "causal"                 # "causal" (real-time, no future data) or "retrospective"
+  methods:
+    - "CAUSAL_TEMPORAL_INTERPOLATION"
+    - "RETROSPECTIVE_INTERPOLATION"
+    - "SPATIAL_IDW_CONSENSUS"
+    - "ROLLING_BASELINE"
+    - "COMBINED_TEMPORAL_SPATIAL"
+  temporal_rolling_window_steps: 12       # Local 1-hour window for rolling baseline
+  min_history_steps_for_temporal: 3       # Minimum preceding observations required
+
+correction:
+  min_valid_neighbors_for_consensus: 2    # Minimum active neighbors required
+  max_spatial_distance_km: 600.0         # Spatial neighbor search radius
+  max_neighbor_time_delta_minutes: 30.0   # Temporal alignment tolerance
+  idw_power: 1.0                          # Distance weighting exponent
+  
+  # Safety limits on maximum allowed single-step correction departure
+  max_allowed_correction:
+    temperature_c: 15.0                   # °C max departure between observed & recommendation
+    relative_humidity_pct: 50.0           # % max departure
+    sea_level_pressure_hpa: 20.0          # hPa max departure
+    station_pressure_hpa: 20.0            # hPa max departure
+    dew_point_c: 15.0                     # °C max departure
+
+  # Thresholds for status determination
+  # If uncertainty or deviation exceeds threshold, status becomes REVIEW_RECOMMENDED or INSUFFICIENT_EVIDENCE
+  uncertainty_thresholds:
+    max_absolute_deviation:
+      temperature_c: 5.0
+      relative_humidity_pct: 25.0
+      sea_level_pressure_hpa: 6.0
+      station_pressure_hpa: 6.0
+      dew_point_c: 5.0
+    min_method_quality: "MEDIUM"          # Below MEDIUM forces REVIEW_RECOMMENDED or INSUFFICIENT_EVIDENCE
+
+  # Health score synergy thresholds
+  health_integration:
+    degraded_health_score_threshold: 60.0 # Station health below 60 strengthens candidate status
+    critical_health_score_threshold: 40.0 # Station health below 40 triggers priority review
+    min_health_history_records: 6         # Minimum health evaluation records needed for high quality
+
+  # Regional event protection
+  regional_event_protection:
+    enabled: true
+    block_correction_on_genuine_event: true
+    explanation_text: "Observation is consistent with regional atmospheric behavior."
+
+# Multivariate Physical Consistency Checks
+multivariate_consistency:
+  enforce_thermodynamic_bounds: true
+  min_dew_point_spread_c: -0.2            # Physical tolerance for T >= Td
+  min_temperature_c: -50.0
+  max_temperature_c: 60.0
+  min_humidity_pct: 0.0
+  max_humidity_pct: 100.0
+  min_sea_level_pressure_hpa: 870.0
+  max_sea_level_pressure_hpa: 1085.0
+  min_station_pressure_hpa: 300.0
+  max_station_pressure_hpa: 1085.0

@@ -64,6 +64,31 @@ The central normalized data contract produced by all data adapters and parsers:
 | `status` | `string` | `"ACTIVE"`, `"MAINTENANCE"`, `"DECOMMISSIONED"` |
 | `installed_sensors` | `list[str]` | List of active sensors (e.g., `["TEMP", "PRES", "RH"]`) |
 
+### 3.3. Imputed Missing Data Record (`ImputationRecord`)
+Stored non-destructively in `data/corrections/imputation_records.jsonl`.
+- `station_id`: Unique station identifier
+- `timestamp`: UTC observation timestamp
+- `target_variable`: Meteorological variable name (`temperature_c`, `relative_humidity_pct`, `sea_level_pressure_hpa`)
+- `imputed_value`: Model-derived numerical estimate (if within gap-length limits)
+- `status`: `IMPUTED` or `NOT_IMPUTABLE`
+- `method`: `CAUSAL_TEMPORAL_INTERPOLATION`, `RETROSPECTIVE_INTERPOLATION`, `SPATIAL_IDW_CONSENSUS`, `ROLLING_BASELINE`, `COMBINED_TEMPORAL_SPATIAL`
+- `gap_duration_minutes`: Data gap duration
+- `is_causal`: Boolean guarantee of zero future lookahead
+
+### 3.4. Correction Recommendation Record (`CorrectionRecommendation`)
+Stored non-destructively in `data/corrections/correction_recommendations.jsonl`.
+- `observation_id`: Hash of target observation
+- `station_id`: Unique station identifier
+- `timestamp`: UTC observation timestamp
+- `target_variable`: Meteorological parameter
+- `observed_value`: Pristine incoming sensor reading (remains immutable)
+- `recommended_value`: Recommended numerical estimate
+- `status`: `NO_CORRECTION_RECOMMENDED`, `REVIEW_RECOMMENDED`, `CORRECTION_CANDIDATE`, `INSUFFICIENT_EVIDENCE`
+- `method`: Estimation method applied
+- `uncertainty`: Estimate range, standard error, method quality, supporting neighbor count
+- `multivariate_consistent`: Flag confirming joint physical consistency
+- `operator_summary`: Scientific natural language explanation for operators
+
 ---
 
 ## 4. Anomaly Taxonomy (15 Operational Categories)

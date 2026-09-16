@@ -165,4 +165,5 @@ All summary generation is deterministic: identical models, features, evidence, a
 SkyGuard enforces rigorous scientific communication rules:
 - **No Causal Overreach**: We never write *"SHAP proves the sensor is faulty."* Instead, we state: *"SHAP identifies the model features that contributed most to the anomaly score."*
 - **No Certainty Overreach**: We never state *"event is definitely genuine."* We write: *"evidence is consistent with a regional event."*
+- **Correction Advisory Phrasing**: We never state *"Corrected value is true."* We write: *"Recommended estimate"*, *"Candidate correction"*, *"Model-derived estimate"*, *"Manual review recommended"*.
 - **Explainable Uncertainty**: `UNCERTAIN` decisions must never be an unexplained fallback; the exact conflicting or sparse subsystem evidence is explicitly declared.

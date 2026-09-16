@@ -16,6 +16,8 @@
 | ADR-010 | Explicit UNCERTAIN Operational State for Ambiguous Telemetry | Accepted | 2026-09-17 |
 | ADR-011 | Empirical Sensor Health Indexing over Failure Probability Claims | Accepted | 2026-09-17 |
 | ADR-012 | Regional Weather Event Protection in Health Degradation Tracking | Accepted | 2026-09-17 |
+| ADR-013 | Controlled Data Imputation & Advisory Correction Separation | Accepted | 2026-09-17 |
+| ADR-014 | Multivariate Thermodynamic Consistency in Candidate Corrections | Accepted | 2026-09-17 |
 
 
 ---
@@ -118,4 +120,21 @@
 - **Context:** Severe synoptic weather events (e.g., convective squall lines, microbursts, heatwaves) produce rapid rate changes and high anomaly scores across multiple stations. Penalizing sensor health during genuine storms would cause the entire regional AWS network to falsely report as degraded.
 - **Decision:** When the hybrid decision engine classifies an observation as `POSSIBLE_GENUINE_EVENT`, the health engine explicitly applies a **0.0 penalty**, preserving the station's health index.
 - **Consequences:** Prevents genuine extreme meteorological events from triggering false maintenance inspection alerts.
+
+---
+
+## ADR-013: Controlled Data Imputation & Advisory Correction Separation
+- **Status:** Accepted
+- **Context:** Conflating missing telemetry imputation with anomaly correction creates legal and scientific data integrity risks. Silently modifying raw observations destroys audit provenance, whereas failing to provide candidate values leaves downstream modeling without repair guidance.
+- **Decision:** Separate missing-data imputation (`MissingDataImputer`) from suspicious-observation recommendations (`CorrectionRecommendationEngine`). All outputs are stored as non-destructive audit records in `data/corrections/` with explicit uncertainty intervals and scientific advisory phrasing ("Recommended estimate", "Candidate correction"). Raw sensor data is 100% immutable.
+- **Consequences:** Completely preserves raw data provenance while providing auditable, traceable candidate repairs for operations engineers and downstream consumers.
+
+---
+
+## ADR-014: Multivariate Thermodynamic Consistency in Candidate Corrections
+- **Status:** Accepted
+- **Context:** Recommending channel-independent corrections across Temperature, Relative Humidity, Dew Point, and Pressure can easily generate unphysical meteorological states (e.g. $T_d > T$, supersaturation, or barometric inversions).
+- **Decision:** All candidate multi-variable correction bundles must pass an integrated thermodynamic and hypsometric validation suite before submission. Any physical contradiction automatically downgrades the recommendation status to `REVIEW_RECOMMENDED`.
+- **Consequences:** Ensures that no model-derived repair proposal violates physical and meteorological laws.
+
 
