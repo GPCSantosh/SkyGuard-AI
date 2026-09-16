@@ -109,3 +109,14 @@ The engine produces structured human-readable explanations and standard operatin
   - `PROBABLE_SENSOR_ANOMALY` $\rightarrow$ "Inspect sensor hardware and wiring. Validate against portable reference instrument or redundant sensor."
   - `PROBABLE_DATA_QUALITY_ISSUE` $\rightarrow$ "Check communication telemetry link, data logger encoding, and ingestion pipeline queue."
   - `UNCERTAIN` $\rightarrow$ "Collect additional observation cycles and review manual field logs before executing corrective maintenance."
+
+---
+
+## 7. Explainability & Anomaly Investigation Layer (Phase 6A)
+Operational decisions produced by `HybridDecisionEngine` feed directly into `ml/explainability/` (`ExplainabilityEngine`), generating complete `ExplanationSummary` objects with:
+- **TreeSHAP Feature Attributions** on Isolation Forest (real model attributions).
+- **Causal Neighbor Comparisons** (strictly non-future median & deviation).
+- **Episode Lifecycle Reconstruction** (onset, peak, recovery, duration).
+- **4-Tier Evidence Hierarchy** (Direct, Model, Contextual, Operational).
+- Full details in [`docs/EXPLAINABILITY.md`](file:///d:/Projects/sih_project/docs/EXPLAINABILITY.md).
+

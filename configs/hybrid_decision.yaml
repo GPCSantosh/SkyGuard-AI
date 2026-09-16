@@ -69,3 +69,18 @@ severity_rules:
   info_criteria:
     - "normal_operation"
     - "corroborated_regional_event"
+
+# 4. Explainability & Investigation Configuration (Phase 6A)
+explainability:
+  top_k_features: 5
+  neighbor_alignment_window_minutes: 15.0
+  reconstruction_preceding_steps: 5
+  reconstruction_following_steps: 5
+  agreement_tolerances:
+    temperature_c: 2.0
+    relative_humidity: 10.0
+    sea_level_pressure_hpa: 2.5
+    station_pressure_hpa: 2.5
+    dew_point_c: 2.5
+    wind_speed_mps: 3.0
+

@@ -95,19 +95,23 @@ Phase 5 tests verify:
 - **`test_hybrid_scenarios.py`**: End-to-end operational verification across canonical Scenarios A through H with exact reason code and SOP action validation.
 - **`test_hybrid_edge_cases.py`**: 15 boundary and edge conditions including zero anomaly scores, extreme out-of-scale scores, contradictory spatial vs temporal signals, all-neighbors-missing scenarios, zero-variance networks, and missing optional evidence domains.
 
+## 9. Phase 6A Test Suite (Explainability & Anomaly Investigation)
+Phase 6A tests verify:
+- **`test_explainability_shap.py`**: TreeSHAP calculation on Isolation Forest, feature contribution ranking and directional classification (`increases_anomaly` vs `decreases_anomaly`), fallback attribution on non-tree baselines (`FixedThresholdDetector`), and resilience against NaNs/Infs/unfitted models.
+- **`test_explainability_neighbor.py`**: Strictly causal neighbor comparison, median calculation, target deviation, agreement counts, and exclusion of forward/future timestamps.
+- **`test_explainability_episode.py`**: Anomaly episode lifecycle reconstruction (preceding normal baseline, onset, peak, recovery, duration in minutes, and neighbor context).
+- **`test_explainability_synthesizer.py`**: 4-tier evidence hierarchy separation (Direct, Model, Contextual, Operational), deterministic reason code mapping, cautious regional phrasing for `POSSIBLE_GENUINE_EVENT`, explicit explanations for `UNCERTAIN`, and pipeline-focused recommendations for data quality issues.
+- **`test_explainability_semantic_eval.py`**: Automated semantic audit verifying explanation signatures across synthetic anomaly types (`SPIKE`, `FROZEN_SENSOR`, `DRIFT`, `LOCAL_SENSOR_FAULT`, `REGIONAL_EVENT`, `DATA_GAP`).
+- **`test_explainability_edge_cases.py`**: Engine determinism, complete audit metadata preservation, and robustness on edge topologies (0 neighbors, stale neighbors, constant features).
+
 ---
 
-## 9. Test Commands
+## 10. Test Commands
 ```bash
-# Run full unit test suite (Phases 0, 1, 2, 3, 4, 5)
+# Run full test suite (Phases 0 - 6A)
 pytest -v tests/unit/
 
-# Run specific Phase 5 Hybrid Decision Engine tests
-pytest -v tests/unit/test_hybrid_evidence.py tests/unit/test_hybrid_decision_engine.py tests/unit/test_hybrid_scenarios.py tests/unit/test_hybrid_edge_cases.py
-
-# Run specific Phase 4 spatial context tests
-pytest -v tests/unit/test_spatial_topology.py tests/unit/test_spatial_engine.py tests/unit/test_spatial_scenarios.py tests/unit/test_spatial_edge_cases.py
-
-# Run specific Phase 3 baseline & anti-leakage tests
-pytest -v tests/unit/test_leakage.py tests/unit/test_isolation_forest.py tests/unit/test_models_baselines.py tests/unit/test_evaluation_metrics.py tests/unit/test_feature_registry.py tests/unit/test_phase3_edge_cases.py
+# Run specific Phase 6A Explainability tests
+pytest -v tests/unit/test_explainability_shap.py tests/unit/test_explainability_neighbor.py tests/unit/test_explainability_episode.py tests/unit/test_explainability_synthesizer.py tests/unit/test_explainability_semantic_eval.py tests/unit/test_explainability_edge_cases.py
 ```
+

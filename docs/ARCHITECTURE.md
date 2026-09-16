@@ -124,7 +124,8 @@ sequenceDiagram
 - **Unsupervised / Semi-Supervised Anomaly Detection (Phase 3 — COMPLETED)**: Process engineered features (z-scores, sliding-window standard deviations, diurnal trend residuals) using isolation forests and robust statistical estimators.
 - **Score Representation**: ML anomaly scores are output as normalized distance/anomaly metrics, **not** mislabeled as calibrated probabilities.
 - **Hybrid Decision Engine (Phase 5 — COMPLETED)**: Hierarchical 7-gate multi-evidence arbiter combining data quality, planetary limits, temporal invariance, multivariate thermodynamics, single-station ML, and spatial context into structured classifications (`NORMAL`, `POSSIBLE_GENUINE_EVENT`, `PROBABLE_SENSOR_ANOMALY`, `PROBABLE_DATA_QUALITY_ISSUE`, `UNCERTAIN`).
-- **Explainability & Sensor Health Indexing (Phase 6)**: Provide local feature attributions (SHAP / contribution vectors) and composite continuous 0-100 sensor degradation tracking.
+- **Explainability & Anomaly Investigation (Phase 6A — COMPLETED)**: Real TreeSHAP local feature attributions on Isolation Forest, strictly causal neighbor comparisons, anomaly episode lifecycle reconstructions, and 4-tier structured evidence hierarchies.
+- **Sensor Health Indexing (Phase 6B)**: Continuous 0-100 degradation scoring, transducer calibration drift tracking, and maintenance forecasting.
 - **Controlled Evaluation**: Support synthetic anomaly injection on historical baseline datasets with separated ground-truth evaluation pipelines.
 
 ---
