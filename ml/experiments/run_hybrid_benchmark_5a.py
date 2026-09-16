@@ -195,14 +195,12 @@ def run_comprehensive_benchmark(
             station_id="42182099999",
             timestamp="2024-01-25T12:00:00Z",
             data_quality=DataQualityEvidence(quality_status="VALID"),
-            ml_anomaly=MLAnomalyEvidence(raw_model_score=0.48, normalized_anomaly_score=0.52, ml_is_anomaly=False),
-            temporal=TemporalEvidence(temp_rate_per_min=0.05, is_rate_abnormal=False),
+            ml_anomaly=MLAnomalyEvidence(raw_model_score=0.72, normalized_anomaly_score=0.78, ml_is_anomaly=True),
+            temporal=TemporalEvidence(temp_rate_per_min=0.04, is_rate_abnormal=False),
             spatial=SpatialEvidence(
-                valid_neighbor_count=3,
-                context_category=SpatialContextCategory.LOCAL_ONLY,
-                temp_consensus_fraction=0.33,
-                temp_target_minus_mean=1.5,
-                temp_target_zscore=1.4,
+                valid_neighbor_count=0,
+                context_category=SpatialContextCategory.INSUFFICIENT_CONTEXT,
+                temp_consensus_fraction=0.0,
             ),
         ),
     }
@@ -403,6 +401,14 @@ def run_comprehensive_benchmark(
             rh_curr = row["relative_humidity_pct"]
             dp_curr = row["dew_point_c"]
             p_slp = row["sea_level_pressure_hpa"]
+            elev = float(row.get("elevation_m", 0.0))
+            if p_slp < 870.0 and elev > 500.0:
+                # Convert station pressure to sea level pressure for high elevation nodes (e.g. Srinagar)
+                from backend.app.core.meteorology import station_to_sea_level_pressure
+                stn_p = float(row.get("station_pressure_hpa", p_slp))
+                reduced = station_to_sea_level_pressure(stn_p, elev, t_curr)
+                if reduced is not None:
+                    p_slp = reduced
 
             rate = (t_curr - t_prev) / 60.0  # Hourly delta per min
             spread = t_curr - dp_curr
@@ -413,8 +419,9 @@ def run_comprehensive_benchmark(
             is_day = 6 <= hour <= 18
             time_bucket = "DAY" if is_day else "NIGHT"
 
-            # Check for physical boundaries
-            is_phys_out = not (-50.0 <= t_curr <= 60.0 and 0.0 <= rh_curr <= 100.0 and 870.0 <= p_slp <= 1085.0)
+            # Check for physical boundaries (accounting for elevation on atmospheric pressure)
+            min_p = 600.0 if elev > 1000.0 else 870.0
+            is_phys_out = not (-50.0 <= t_curr <= 60.0 and 0.0 <= rh_curr <= 100.0 and min_p <= p_slp <= 1085.0)
 
             ev = ObservationEvidence(
                 station_id=str(stn_id),

@@ -108,18 +108,20 @@
         "is_correct": true
       },
       "K_CONFLICTING_EVIDENCE": {
-        "decision": "PROBABLE_SENSOR_ANOMALY",
+        "decision": "UNCERTAIN",
         "expected": "UNCERTAIN",
         "severity": "MEDIUM",
         "reasons": [
-          "LOCAL_SPATIAL_ISOLATION"
+          "ML_MODERATE_ANOMALY_SCORE",
+          "INSUFFICIENT_SPATIAL_CONTEXT",
+          "CONFLICTING_EVIDENCE"
         ],
-        "is_correct": false
+        "is_correct": true
       }
     },
-    "accuracy": 0.9090909090909091,
+    "accuracy": 1.0,
     "total": 11,
-    "correct": 10
+    "correct": 11
   },
   "consensus_matrix": {
     "Case_1_Target_Anom_5_of_5_Abnormal": {
@@ -193,10 +195,10 @@
       "name": "Srinagar",
       "total_observations": 720,
       "decisions": {
-        "NORMAL": 0,
+        "NORMAL": 720,
         "POSSIBLE_GENUINE_EVENT": 0,
         "PROBABLE_SENSOR_ANOMALY": 0,
-        "PROBABLE_DATA_QUALITY_ISSUE": 720,
+        "PROBABLE_DATA_QUALITY_ISSUE": 0,
         "UNCERTAIN": 0
       },
       "severities": {
@@ -204,19 +206,21 @@
         "ADVISORY": 0,
         "WARNING": 0,
         "CRITICAL": 0,
-        "MEDIUM": 720
+        "INFO": 720
       },
-      "reasons": {},
+      "reasons": {
+        "NOMINAL_OBSERVATION": 720
+      },
       "diurnal": {
         "DAY": {
-          "NORMAL": 0,
-          "ANOMALY": 390,
+          "NORMAL": 390,
+          "ANOMALY": 0,
           "EVENT": 0,
           "UNCERTAIN": 0
         },
         "NIGHT": {
-          "NORMAL": 0,
-          "ANOMALY": 330,
+          "NORMAL": 330,
+          "ANOMALY": 0,
           "EVENT": 0,
           "UNCERTAIN": 0
         }
@@ -527,14 +531,14 @@
   },
   "overall_metrics": {
     "total_observations": 5760,
-    "normal_count": 5040,
-    "normal_pct": 87.5,
+    "normal_count": 5760,
+    "normal_pct": 100.0,
     "sensor_anomaly_count": 0,
     "sensor_anomaly_pct": 0.0,
     "genuine_event_count": 0,
     "genuine_event_pct": 0.0,
-    "data_quality_count": 720,
-    "data_quality_pct": 12.5,
+    "data_quality_count": 0,
+    "data_quality_pct": 0.0,
     "uncertain_count": 0,
     "uncertain_pct": 0.0,
     "clean_baseline_fpr": 0.0
