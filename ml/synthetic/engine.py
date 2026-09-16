@@ -94,7 +94,7 @@ class SyntheticAnomalyEngine:
             InjectedDatasetResult containing modified DataFrame and isolated ground truth table.
         """
         # Strict requirement: Never mutate raw input dataframe
-        modified_df = df.copy()
+        modified_df = df.copy().reset_index(drop=True)
         if modified_df.empty:
             return InjectedDatasetResult(
                 modified_df=modified_df,
@@ -115,7 +115,9 @@ class SyntheticAnomalyEngine:
             avail_params = ["temperature"]
 
         # If target stations specified, filter indices
-        target_stations = self.config.target_stations or modified_df[station_id_col].unique().tolist()
+        target_stations = [str(s) for s in (self.config.target_stations or modified_df[station_id_col].unique().tolist())]
+
+        occupied_indices_by_station: Dict[str, set] = {s: set() for s in target_stations}
 
         for anom_type in self.config.anomalies_to_inject:
             if anom_type not in self.injectors:
@@ -129,18 +131,22 @@ class SyntheticAnomalyEngine:
             )
 
             for _ in range(self.config.num_anomalies_per_type):
-                if len(modified_df) < 10:
+                if len(modified_df) < 3:
                     break
 
                 # Pick a random station and target index
                 chosen_station = str(self.rng.choice(target_stations))
                 stn_indices = modified_df[modified_df[station_id_col].astype(str) == chosen_station].index.tolist()
-                if not stn_indices or len(stn_indices) < 8:
+                if not stn_indices or len(stn_indices) < 2:
                     continue
 
-                # Pick index with margin from end
-                margin = min(50, len(stn_indices) // 2)
-                target_idx = int(self.rng.choice(stn_indices[: max(1, len(stn_indices) - margin)]))
+                # Pick index with margin from end, preferring unoccupied positions
+                margin = max(1, min(10, len(stn_indices) // 4)) if len(stn_indices) > 4 else 0
+                valid_pool = stn_indices[: max(1, len(stn_indices) - margin)] if margin > 0 else stn_indices
+                unoccupied_pool = [i for i in valid_pool if i not in occupied_indices_by_station[chosen_station]]
+                pool_to_use = unoccupied_pool if unoccupied_pool else valid_pool
+
+                target_idx = int(self.rng.choice(pool_to_use))
                 param = str(self.rng.choice(avail_params)) if avail_params else "temperature_c"
                 anomaly_id = f"ANOM-{anomaly_counter:06d}"
 
@@ -157,6 +163,10 @@ class SyntheticAnomalyEngine:
                     modified_df = res_df
                     all_gt_records.extend(gt_list)
                     anomaly_counter += 1
+                    # Mark indices as occupied with a small buffer
+                    ep_len = len(gt_list)
+                    for occ_i in range(target_idx, min(len(modified_df), target_idx + ep_len + 3)):
+                        occupied_indices_by_station[chosen_station].add(occ_i)
 
         # Convert ground truth records to DataFrame
         gt_dicts = [r.model_dump() for r in all_gt_records]

@@ -27,52 +27,32 @@ Pure machine learning alone can fail on meteorological edge cases, and determini
 
 ---
 
-## 3. Anomaly Detection Models (Future Pipeline)
+## 3. Anomaly Detection Models (Phase 3 Implemented Baselines)
 
-### 3.1. Stage 1: Unsupervised Anomaly Scoring
-- **Isolation Forest**: Multi-dimensional tree isolation on temporal residual and multivariate feature vectors.
-- **Local Outlier Factor (LOF)**: Density-based local outlier detection on spatial-temporal feature space.
-- **Robust Statistical Estimators**: Median Absolute Deviation (MAD) on high-frequency residuals for spike detection.
-- *(Future Exploration: Autoencoders / Temporal Convolutional Networks for sequence reconstruction loss).*
+### 3.1. Implemented Baseline Models
+- **FixedThresholdDetector** (`ml/models/baselines.py`): Deterministic physical domain bounds check across primary parameters (Temperature, Dewpoint, Pressure, Wind Speed).
+- **RollingZScoreDetector** (`ml/models/baselines.py`): Dynamic temporal window standard score residual detector with min-periods and variance floor safeguards.
+- **IsolationForestDetector** (`ml/models/isolation_forest.py`): Multi-dimensional scikit-learn isolation forest wrapped in `BaseAnomalyModel` with sanitized input feature vectors, continuous normalized anomaly scores in $[0, 1]$, and validation quantile threshold calibration.
 
-### 3.2. Stage 2: Root-Cause Classification
-- Decision tree / rule-augmented classifier mapping detected anomalies, feature contribution vectors, and spatial agreement flags to the 15-category taxonomy.
-
-### 3.3. Stage 3: Explainability (SHAP / Feature Contributions)
-- TreeSHAP integration to compute local feature attributions:
-  - e.g., *"Observation flagged as SPIKE primarily due to 5-minute temperature rate of change (+6.2°C/5min, SHAP value: +0.48) with zero spatial neighbor corroboration (SHAP value: +0.32)."*
+### 3.2. Future Pipeline Stages (Phase 4 & 5)
+- **Stage 2: Spatial Topographic Consensus Engine (Phase 4)**: Cross-AWS neighbor correlation and elevation-adjusted IDW verification to separate genuine severe weather from hardware failures.
+- **Stage 3: Hybrid Root-Cause Decision Engine (Phase 5)**: Rule-augmented classifier mapping multi-model anomaly signals to the 15-category taxonomy.
+- **Stage 4: Explainability (Phase 5)**: TreeSHAP local feature attributions and sensor health indexing.
 
 ---
 
-## 4. Synthetic Anomaly Injection & Evaluation Engine (Planned)
-To benchmark and validate model performance without relying solely on rare natural failures, SkyGuard AI includes a synthetic fault generator capable of injecting controlled anomalies into historical series:
-
-```yaml
-synthetic_fault_types:
-  - name: "spike"
-    magnitude_range: [3.0, 15.0]
-    duration_steps: [1, 3]
-  - name: "drift"
-    slope_per_hour: [0.1, 1.5]
-    duration_hours: [6, 72]
-  - name: "frozen_value"
-    duration_steps: [6, 48]
-  - name: "step_offset"
-    offset_magnitude: [2.0, 8.0]
-  - name: "missing_burst"
-    dropped_steps: [3, 24]
-```
-
-- **Ground Truth Isolation**: Injected fault metadata (`fault_type`, `injected_delta`, `start_time`, `end_time`) is stored in an independent evaluation label registry and never passed into model training or inference feature sets.
+## 4. Synthetic Anomaly Injection & Evaluation Framework
+Implemented in `ml/synthetic/` and `ml/evaluation/`:
+- **15-Class Anomaly Injector**: Controlled synthetic mutations with subtle, moderate, and obvious severity profiles.
+- **Strict Chronological Splitting**: Non-overlapping Past $\rightarrow$ Future Train/Val/Test partitions with zero future leakage.
+- **Ground-Truth Isolation**: Synthetic labels (`fault_type`, `injected_delta`, `severity`, `is_synthetic`) are strictly isolated from feature inputs and used only by `ModelEvaluator`.
 
 ---
 
 ## 5. Model Versioning & Lifecycle
-- Model persistence via `joblib` in `models/registry/`.
-- Strict artifact naming convention: `skyguard_{model_type}_{parameter}_v{semver}_{timestamp}.joblib`.
-- Accompanying JSON manifest containing:
-  - Model UUID & semantic version
-  - Training dataset hash & date range
-  - Exact feature list & transformation pipeline parameters
-  - Benchmark performance metrics (Precision, Recall, F1 on synthetic evaluation sets)
-  - Target station IDs or universal network applicability
+- Model weights saved to `models/registry/<model_id>_weights.joblib`.
+- Metadata manifests saved to `models/registry/<model_id>_metadata.json` containing:
+  - Model UUID, model type, creation timestamp
+  - Exact feature list, hyperparameter dictionary
+  - Calibrated anomaly threshold and training score percentiles
+

@@ -1,0 +1,42 @@
+{
+  "Set_A_Raw_Temporal": {
+    "num_features": 7,
+    "precision": 0.041,
+    "recall": 0.0781,
+    "f1_score": 0.0538,
+    "false_positive_rate": 0.1127,
+    "event_recall": 0.1176,
+    "mean_latency_minutes": 30.0,
+    "calibrated_threshold": 0.9076971856309858
+  },
+  "Set_B_Temporal_Rolling": {
+    "num_features": 17,
+    "precision": 0.0318,
+    "recall": 0.0781,
+    "f1_score": 0.0452,
+    "false_positive_rate": 0.1464,
+    "event_recall": 0.1176,
+    "mean_latency_minutes": 60.0,
+    "calibrated_threshold": 0.7613832674908463
+  },
+  "Set_C_Multivariate": {
+    "num_features": 21,
+    "precision": 0.0581,
+    "recall": 0.2188,
+    "f1_score": 0.0918,
+    "false_positive_rate": 0.2187,
+    "event_recall": 0.3824,
+    "mean_latency_minutes": 50.77,
+    "calibrated_threshold": 0.5833273943020805
+  },
+  "Set_D_Spatial": {
+    "num_features": 25,
+    "precision": 0.0588,
+    "recall": 0.9688,
+    "f1_score": 0.1109,
+    "false_positive_rate": 0.9557,
+    "event_recall": 0.8824,
+    "mean_latency_minutes": 14.0,
+    "calibrated_threshold": 0.250802478263753
+  }
+}

@@ -1,0 +1,763 @@
+{
+  "dataset_split": {
+    "train_rows": 3456,
+    "val_rows": 1152,
+    "test_rows": 1152,
+    "train_dates": [
+      "2024-01-01 00:00:00+00:00",
+      "2024-01-18 23:00:00+00:00"
+    ],
+    "val_dates": [
+      "2024-01-19 00:00:00+00:00",
+      "2024-01-24 23:00:00+00:00"
+    ],
+    "test_dates": [
+      "2024-01-25 00:00:00+00:00",
+      "2024-01-30 23:00:00+00:00"
+    ],
+    "stations_evaluated": [
+      "42027099999",
+      "42182099999",
+      "42339099999",
+      "42809099999",
+      "42867099999",
+      "43003099999",
+      "43279099999",
+      "43295099999"
+    ]
+  },
+  "event_accounting": {
+    "total_injected_events": 38,
+    "total_affected_observations": 415,
+    "mean_observations_per_event": 10.92,
+    "overlapping_event_timestamps": 1
+  },
+  "normal_weather_false_alarms": {
+    "clean_test_observations": 1152,
+    "false_positives": 247,
+    "false_positive_rate": 0.2144,
+    "false_alarms_per_station_day": 0.0
+  },
+  "models": {
+    "FixedThreshold": {
+      "model_id": "fixed_threshold_s42",
+      "observation_metrics": {
+        "total_observations": 1102,
+        "true_positives": 0,
+        "false_positives": 0,
+        "true_negatives": 1038,
+        "false_negatives": 64,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 1.0,
+        "pr_auc": 0.0581,
+        "roc_auc": 0.5
+      },
+      "event_metrics": {
+        "total_injected_events": 34,
+        "detected_events": 0,
+        "missed_events": 34,
+        "event_recall": 0.0,
+        "mean_detection_latency_steps": 0.0,
+        "mean_detection_latency_minutes": 0.0,
+        "false_alarm_events": 0,
+        "false_alarms_per_station_day": 0.0
+      },
+      "station_metrics": {
+        "42027099999": {
+          "observations": 140,
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42182099999": {
+          "observations": 136,
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42339099999": {
+          "observations": 139,
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42809099999": {
+          "observations": 136,
+          "injected_events": 3,
+          "detected_events": 0,
+          "missed_events": 3,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42867099999": {
+          "observations": 138,
+          "injected_events": 6,
+          "detected_events": 0,
+          "missed_events": 6,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "43003099999": {
+          "observations": 136,
+          "injected_events": 6,
+          "detected_events": 0,
+          "missed_events": 6,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "43279099999": {
+          "observations": 139,
+          "injected_events": 5,
+          "detected_events": 0,
+          "missed_events": 5,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "43295099999": {
+          "observations": 138,
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0,
+          "false_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        }
+      },
+      "taxonomy_metrics": {
+        "COMMUNICATION_GAP": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "DRIFT": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "DUPLICATE_DATA": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "FROZEN_SENSOR": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "INTERMITTENT_FREEZE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "MISSING_DATA": {
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0
+        },
+        "MULTIVARIATE_INCONSISTENCY": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "MULTI_SENSOR_FAULT": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "NEGATIVE_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "OFFSET": {
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0
+        },
+        "OUT_OF_ORDER_DATA": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "POSSIBLE_GENUINE_EVENT": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "RANDOM_NOISE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "SMALL_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "SPIKE": {
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0
+        },
+        "UNCERTAIN": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        }
+      },
+      "severity_metrics": {
+        "subtle": {
+          "events": 14,
+          "detected": 0,
+          "recall": 0.0
+        },
+        "moderate": {
+          "events": 6,
+          "detected": 0,
+          "recall": 0.0
+        },
+        "obvious": {
+          "events": 26,
+          "detected": 0,
+          "recall": 0.0
+        }
+      },
+      "genuine_event_summary": {
+        "evaluated_records": 16,
+        "flagged_as_anomaly": 0,
+        "false_alarm_rate": 0.0,
+        "mean_anomaly_score": 0.0,
+        "calibrated_threshold": 0.5,
+        "interpretation": "Baseline unsupervised models flag extreme genuine events unless spatial context is checked."
+      }
+    },
+    "RollingZScore": {
+      "model_id": "rolling_zscore_s42",
+      "observation_metrics": {
+        "total_observations": 1102,
+        "true_positives": 64,
+        "false_positives": 1038,
+        "true_negatives": 0,
+        "false_negatives": 0,
+        "precision": 0.0581,
+        "recall": 1.0,
+        "f1_score": 0.1098,
+        "false_positive_rate": 1.0,
+        "false_negative_rate": 0.0,
+        "pr_auc": 0.0581,
+        "roc_auc": 0.5
+      },
+      "event_metrics": {
+        "total_injected_events": 34,
+        "detected_events": 31,
+        "missed_events": 3,
+        "event_recall": 0.9118,
+        "mean_detection_latency_steps": 1.32,
+        "mean_detection_latency_minutes": 13.55,
+        "false_alarm_events": 1,
+        "false_alarms_per_station_day": 0.021
+      },
+      "station_metrics": {
+        "42027099999": {
+          "observations": 140,
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 135,
+          "precision": 0.0357,
+          "recall": 1.0,
+          "f1_score": 0.069
+        },
+        "42182099999": {
+          "observations": 136,
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5,
+          "false_positives": 133,
+          "precision": 0.0221,
+          "recall": 1.0,
+          "f1_score": 0.0432
+        },
+        "42339099999": {
+          "observations": 139,
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 130,
+          "precision": 0.0647,
+          "recall": 1.0,
+          "f1_score": 0.1216
+        },
+        "42809099999": {
+          "observations": 136,
+          "injected_events": 3,
+          "detected_events": 3,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 132,
+          "precision": 0.0294,
+          "recall": 1.0,
+          "f1_score": 0.0571
+        },
+        "42867099999": {
+          "observations": 138,
+          "injected_events": 6,
+          "detected_events": 6,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 126,
+          "precision": 0.087,
+          "recall": 1.0,
+          "f1_score": 0.16
+        },
+        "43003099999": {
+          "observations": 136,
+          "injected_events": 6,
+          "detected_events": 5,
+          "missed_events": 1,
+          "event_recall": 0.8333,
+          "false_positives": 124,
+          "precision": 0.0882,
+          "recall": 1.0,
+          "f1_score": 0.1622
+        },
+        "43279099999": {
+          "observations": 139,
+          "injected_events": 5,
+          "detected_events": 4,
+          "missed_events": 1,
+          "event_recall": 0.8,
+          "false_positives": 132,
+          "precision": 0.0504,
+          "recall": 1.0,
+          "f1_score": 0.0959
+        },
+        "43295099999": {
+          "observations": 138,
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 126,
+          "precision": 0.087,
+          "recall": 1.0,
+          "f1_score": 0.16
+        }
+      },
+      "taxonomy_metrics": {
+        "COMMUNICATION_GAP": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "DRIFT": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "DUPLICATE_DATA": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "FROZEN_SENSOR": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "INTERMITTENT_FREEZE": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "MISSING_DATA": {
+          "injected_events": 4,
+          "detected_events": 2,
+          "missed_events": 2,
+          "event_recall": 0.5
+        },
+        "MULTIVARIATE_INCONSISTENCY": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "MULTI_SENSOR_FAULT": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "NEGATIVE_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "OFFSET": {
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "OUT_OF_ORDER_DATA": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "POSSIBLE_GENUINE_EVENT": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "RANDOM_NOISE": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "SMALL_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "SPIKE": {
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "UNCERTAIN": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        }
+      },
+      "severity_metrics": {
+        "subtle": {
+          "events": 14,
+          "detected": 14,
+          "recall": 1.0
+        },
+        "moderate": {
+          "events": 6,
+          "detected": 6,
+          "recall": 1.0
+        },
+        "obvious": {
+          "events": 26,
+          "detected": 23,
+          "recall": 0.8846
+        }
+      },
+      "genuine_event_summary": {
+        "evaluated_records": 16,
+        "flagged_as_anomaly": 16,
+        "false_alarm_rate": 1.0,
+        "mean_anomaly_score": 0.0,
+        "calibrated_threshold": 0.0,
+        "interpretation": "Baseline unsupervised models flag extreme genuine events unless spatial context is checked."
+      }
+    },
+    "IsolationForest": {
+      "model_id": "isolation_forest_s42",
+      "observation_metrics": {
+        "total_observations": 1102,
+        "true_positives": 14,
+        "false_positives": 227,
+        "true_negatives": 811,
+        "false_negatives": 50,
+        "precision": 0.0581,
+        "recall": 0.2188,
+        "f1_score": 0.0918,
+        "false_positive_rate": 0.2187,
+        "false_negative_rate": 0.7812,
+        "pr_auc": 0.0525,
+        "roc_auc": 0.44
+      },
+      "event_metrics": {
+        "total_injected_events": 34,
+        "detected_events": 13,
+        "missed_events": 21,
+        "event_recall": 0.3824,
+        "mean_detection_latency_steps": 6.92,
+        "mean_detection_latency_minutes": 50.77,
+        "false_alarm_events": 120,
+        "false_alarms_per_station_day": 2.5175
+      },
+      "station_metrics": {
+        "42027099999": {
+          "observations": 140,
+          "injected_events": 4,
+          "detected_events": 4,
+          "missed_events": 0,
+          "event_recall": 1.0,
+          "false_positives": 135,
+          "precision": 0.0357,
+          "recall": 1.0,
+          "f1_score": 0.069
+        },
+        "42182099999": {
+          "observations": 136,
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0,
+          "false_positives": 8,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42339099999": {
+          "observations": 139,
+          "injected_events": 4,
+          "detected_events": 2,
+          "missed_events": 2,
+          "event_recall": 0.5,
+          "false_positives": 28,
+          "precision": 0.0667,
+          "recall": 0.2222,
+          "f1_score": 0.1026
+        },
+        "42809099999": {
+          "observations": 136,
+          "injected_events": 3,
+          "detected_events": 0,
+          "missed_events": 3,
+          "event_recall": 0.0,
+          "false_positives": 6,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "42867099999": {
+          "observations": 138,
+          "injected_events": 6,
+          "detected_events": 2,
+          "missed_events": 4,
+          "event_recall": 0.3333,
+          "false_positives": 8,
+          "precision": 0.2,
+          "recall": 0.1667,
+          "f1_score": 0.1818
+        },
+        "43003099999": {
+          "observations": 136,
+          "injected_events": 6,
+          "detected_events": 2,
+          "missed_events": 4,
+          "event_recall": 0.3333,
+          "false_positives": 7,
+          "precision": 0.125,
+          "recall": 0.0833,
+          "f1_score": 0.1
+        },
+        "43279099999": {
+          "observations": 139,
+          "injected_events": 5,
+          "detected_events": 0,
+          "missed_events": 5,
+          "event_recall": 0.0,
+          "false_positives": 4,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0
+        },
+        "43295099999": {
+          "observations": 138,
+          "injected_events": 4,
+          "detected_events": 3,
+          "missed_events": 1,
+          "event_recall": 0.75,
+          "false_positives": 31,
+          "precision": 0.1143,
+          "recall": 0.3333,
+          "f1_score": 0.1702
+        }
+      },
+      "taxonomy_metrics": {
+        "COMMUNICATION_GAP": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "DRIFT": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "DUPLICATE_DATA": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "FROZEN_SENSOR": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "INTERMITTENT_FREEZE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "MISSING_DATA": {
+          "injected_events": 4,
+          "detected_events": 0,
+          "missed_events": 4,
+          "event_recall": 0.0
+        },
+        "MULTIVARIATE_INCONSISTENCY": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "MULTI_SENSOR_FAULT": {
+          "injected_events": 2,
+          "detected_events": 2,
+          "missed_events": 0,
+          "event_recall": 1.0
+        },
+        "NEGATIVE_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "OFFSET": {
+          "injected_events": 4,
+          "detected_events": 2,
+          "missed_events": 2,
+          "event_recall": 0.5
+        },
+        "OUT_OF_ORDER_DATA": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "POSSIBLE_GENUINE_EVENT": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "RANDOM_NOISE": {
+          "injected_events": 2,
+          "detected_events": 0,
+          "missed_events": 2,
+          "event_recall": 0.0
+        },
+        "SMALL_SPIKE": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        },
+        "SPIKE": {
+          "injected_events": 4,
+          "detected_events": 2,
+          "missed_events": 2,
+          "event_recall": 0.5
+        },
+        "UNCERTAIN": {
+          "injected_events": 2,
+          "detected_events": 1,
+          "missed_events": 1,
+          "event_recall": 0.5
+        }
+      },
+      "severity_metrics": {
+        "subtle": {
+          "events": 14,
+          "detected": 6,
+          "recall": 0.4286
+        },
+        "moderate": {
+          "events": 6,
+          "detected": 1,
+          "recall": 0.1667
+        },
+        "obvious": {
+          "events": 26,
+          "detected": 10,
+          "recall": 0.3846
+        }
+      },
+      "genuine_event_summary": {
+        "evaluated_records": 16,
+        "flagged_as_anomaly": 4,
+        "false_alarm_rate": 0.25,
+        "mean_anomaly_score": 0.4761,
+        "calibrated_threshold": 0.5833273943020805,
+        "interpretation": "Baseline unsupervised models flag extreme genuine events unless spatial context is checked."
+      }
+    }
+  }
+}

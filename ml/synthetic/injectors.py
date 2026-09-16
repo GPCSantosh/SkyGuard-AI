@@ -406,11 +406,13 @@ class MissingDataInjector(BaseAnomalyInjector):
         config = config or {}
         gt_records: List[GroundTruthRecord] = []
 
-        if target_idx >= len(df):
+        if target_idx >= len(df) or len(df) <= 5:
             return df.copy(), gt_records
 
+        burst_range = config.get("burst_size", [3, 12])
         avail = len(df) - target_idx
-        burst_size = safe_integers(rng, 3, 12, avail)
+        max_droppable = max(1, len(df) - 5)
+        burst_size = safe_integers(rng, burst_range[0], min(burst_range[1], max_droppable), avail)
         stn_id = str(df.iloc[target_idx]["station_id"])
         t_start = pd.to_datetime(df.iloc[target_idx]["timestamp"], utc=True).to_pydatetime()
         t_end = pd.to_datetime(df.iloc[target_idx + burst_size - 1]["timestamp"], utc=True).to_pydatetime()

@@ -43,8 +43,25 @@ Because real-world AWS sensor faults are sparse and irregularly labeled, SkyGuar
 
 ---
 
-## 4. Benchmark Execution Command (Planned)
+## 4. Implemented Evaluation Framework (Phase 3)
+Phase 3 establishes an anti-leakage evaluation harness:
+- **Chronological Partitioning**: `ChronologicalSplitter` in `ml/evaluation/splitting.py` splits data past $\rightarrow$ future (Train 60%, Val 20%, Test 20%) with zero label or feature contamination.
+- **Dual Metric Computation**: `ml/evaluation/metrics.py` calculates both observation-level (Precision, Recall, F1, FPR, FNR, PR-AUC, ROC-AUC) and event-level (Episode Recall, Detection Latency in steps/minutes, False Alarms per station-day).
+- **Comprehensive Evaluation**: `ModelEvaluator` in `ml/evaluation/evaluator.py` decomposes evaluation across all 15 taxonomy classes, severity buckets (subtle, moderate, obvious), and dedicated genuine extreme weather false alarm tracking.
+
+---
+
+## 5. Benchmark Execution Commands
+To execute the baseline benchmark, ablation study, and stability verification:
+
 ```bash
-python scripts/run_synthetic_evaluation.py --config configs/evaluation.yaml --dataset data/raw/historical_sample.csv
+# 1. Main Baseline Experiment (Fixed Threshold, Rolling Z-Score, Isolation Forest)
+python -m ml.experiments.runner --dataset data/processed/42182099999_2024_normalized.csv --seed 42
+
+# 2. Feature Set Ablation Study (Set A, Set B, Set C, Set D)
+python -c "from ml.experiments.ablation import run_ablation_study; run_ablation_study('data/processed/42182099999_2024_normalized.csv')"
+
+# 3. Multi-Seed Stability Verification (Seeds 42, 123, 2026)
+python -c "from ml.experiments.stability import run_multi_seed_stability; run_multi_seed_stability('data/processed/42182099999_2024_normalized.csv')"
 ```
-*(Implementation reserved for future phases)*
+

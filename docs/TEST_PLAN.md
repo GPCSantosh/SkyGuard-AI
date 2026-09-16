@@ -61,11 +61,23 @@ In this phase, tests verify:
 
 ---
 
-## 5. Test Commands
+## 6. Phase 3 Test Suite (Baseline Models & Anti-Leakage Framework)
+In this phase, tests verify:
+- **`test_leakage.py`**: Mandatory anti-leakage verification ensuring strict chronological split ordering (no overlap, train before val, val before test), zero future data leakage during feature generation and imputer fitting, and zero contamination of synthetic ground truth into model features.
+- **`test_models_baselines.py`**: Fixed Threshold and Rolling Z-Score detector initialization, score normalization in $[0, 1]$, threshold calibration on validation sets, and edge case resilience (constant series, NaNs).
+- **`test_isolation_forest.py`**: Isolation Forest detector training on clean data, continuous normalized anomaly scoring, validation threshold calibration, missing/Inf value sanitization, and model/metadata serialization round-trip (`.joblib` + `_metadata.json`).
+- **`test_evaluation_metrics.py`**: Observation-level metrics (Precision, Recall, F1, FPR, FNR, PR-AUC, ROC-AUC) and Event-level metrics (Episode Recall, Latency in steps/minutes, False Alarms per station-day).
+- **`test_feature_registry.py`**: Feature Registry registration, retrieval by category (`RAW`, `TEMPORAL`, `ROLLING`, `CHANGE`, `PERSISTENCE`, `DEVIATION`, `MULTIVARIATE`, `SPATIAL`), named feature sets (Sets A, B, C, D), and validation.
+- **`test_phase3_edge_cases.py`**: 18 specialized edge cases (empty dataframes, missing columns, single-row data, all-NaN/Inf feature inputs, zero variance, extreme unobserved values, negative values, leap-year timestamps, out-of-order timestamps, duplicate timestamps).
+
+---
+
+## 7. Test Commands
 ```bash
-# Run full unit test suite
+# Run full unit test suite (Phases 0, 1, 2, 3)
 pytest -v tests/unit/
 
-# Run with coverage report
-pytest -v --cov=backend/app --cov-report=term-missing tests/
+# Run specific Phase 3 baseline & anti-leakage tests
+pytest -v tests/unit/test_leakage.py tests/unit/test_isolation_forest.py tests/unit/test_models_baselines.py tests/unit/test_evaluation_metrics.py tests/unit/test_feature_registry.py tests/unit/test_phase3_edge_cases.py
 ```
+
