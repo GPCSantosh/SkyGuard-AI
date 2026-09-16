@@ -1,0 +1,44 @@
+# SkyGuard AI — Meteorological Physical & Step Validation Thresholds
+
+physical_limits:
+  temperature:
+    unit: "celsius"
+    min: -50.0
+    max: 60.0
+    description: "Physical bounding range for surface air temperature across India"
+  pressure:
+    unit: "hPa"
+    min: 500.0
+    max: 1080.0
+    description: "Physical bounding range for station surface barometric pressure"
+  humidity:
+    unit: "percentage"
+    min: 0.0
+    max: 100.0
+    description: "Relative humidity bounds"
+
+step_limits:
+  # Maximum permissible absolute rate of change per standard 5-minute step
+  temperature:
+    max_delta_5min: 5.0    # °C / 5 min
+    max_delta_1hour: 12.0  # °C / 1 hour
+  pressure:
+    max_delta_5min: 4.0    # hPa / 5 min
+    max_delta_1hour: 8.0   # hPa / 1 hour
+  humidity:
+    max_delta_5min: 20.0   # % / 5 min
+    max_delta_1hour: 40.0  # % / 1 hour
+
+frozen_sensor_detection:
+  min_consecutive_identical_steps: 12  # 12 steps @ 5min = 1 hour with 0.00 delta
+  min_variance_threshold: 0.0001
+
+drift_detection:
+  min_drift_slope_per_hour: 0.35       # Baseline departure without diurnal cycle backing
+  window_hours: 24
+
+multivariate_constraints:
+  # Physical relationship consistency checks
+  min_dew_point_spread_when_high_rh:
+    rh_threshold: 98.0                 # When RH > 98%, (T - Td) must be < 1.0°C
+    max_depression_celsius: 1.5

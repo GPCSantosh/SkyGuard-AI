@@ -1,0 +1,188 @@
+# SkyGuard AI — Initial Target Station Network Topology (Sample ~20 Stations across India)
+# Spatial comparison uses latitude/longitude geodetic distance, not state name.
+
+network:
+  network_name: "India AWS Observation Network"
+  network_code: "IND_AWS_NET"
+  total_configured_stations: 20
+
+stations:
+  - station_id: "AWS_IND_DL_001"
+    name: "New Delhi Safdarjung"
+    latitude: 28.5847
+    longitude: 77.2060
+    elevation: 216.0
+    state: "Delhi"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_DL_002"
+    name: "New Delhi Palam"
+    latitude: 28.5665
+    longitude: 77.1031
+    elevation: 237.0
+    state: "Delhi"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_MH_001"
+    name: "Mumbai Colaba"
+    latitude: 18.9067
+    longitude: 72.8147
+    elevation: 11.0
+    state: "Maharashtra"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_MH_002"
+    name: "Mumbai Santacruz"
+    latitude: 19.0896
+    longitude: 72.8656
+    elevation: 14.0
+    state: "Maharashtra"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_MH_003"
+    name: "Pune Shivajinagar"
+    latitude: 18.5314
+    longitude: 73.8446
+    elevation: 559.0
+    state: "Maharashtra"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_KA_001"
+    name: "Bengaluru City"
+    latitude: 12.9716
+    longitude: 77.5946
+    elevation: 920.0
+    state: "Karnataka"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_KA_002"
+    name: "Bengaluru HAL Airport"
+    latitude: 12.9500
+    longitude: 77.6681
+    elevation: 888.0
+    state: "Karnataka"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_TN_001"
+    name: "Chennai Nungambakkam"
+    latitude: 13.0604
+    longitude: 80.2496
+    elevation: 16.0
+    state: "Tamil Nadu"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_TN_002"
+    name: "Chennai Meenambakkam"
+    latitude: 12.9941
+    longitude: 80.1809
+    elevation: 16.0
+    state: "Tamil Nadu"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_WB_001"
+    name: "Kolkata Alipore"
+    latitude: 22.5333
+    longitude: 88.3333
+    elevation: 6.0
+    state: "West Bengal"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_WB_002"
+    name: "Kolkata Dum Dum"
+    latitude: 22.6547
+    longitude: 88.4467
+    elevation: 5.0
+    state: "West Bengal"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_TS_001"
+    name: "Hyderabad Begumpet"
+    latitude: 17.4435
+    longitude: 78.4682
+    elevation: 531.0
+    state: "Telangana"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_GJ_001"
+    name: "Ahmedabad Airport"
+    latitude: 23.0734
+    longitude: 72.6266
+    elevation: 55.0
+    state: "Gujarat"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_RJ_001"
+    name: "Jaipur Sanganer"
+    latitude: 26.8289
+    longitude: 75.8056
+    elevation: 390.0
+    state: "Rajasthan"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_KL_001"
+    name: "Thiruvananthapuram"
+    latitude: 8.4821
+    longitude: 76.9547
+    elevation: 64.0
+    state: "Kerala"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_KL_002"
+    name: "Kochi CIAL"
+    latitude: 10.1520
+    longitude: 76.3922
+    elevation: 10.0
+    state: "Kerala"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_OD_001"
+    name: "Bhubaneswar"
+    latitude: 20.2525
+    longitude: 85.8178
+    elevation: 46.0
+    state: "Odisha"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_AS_001"
+    name: "Guwahati Borjhar"
+    latitude: 26.1061
+    longitude: 91.5859
+    elevation: 49.0
+    state: "Assam"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_UT_001"
+    name: "Dehradun"
+    latitude: 30.3165
+    longitude: 78.0322
+    elevation: 682.0
+    state: "Uttarakhand"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"
+
+  - station_id: "AWS_IND_JK_001"
+    name: "Srinagar Airport"
+    latitude: 33.9872
+    longitude: 74.7744
+    elevation: 1587.0
+    state: "Jammu and Kashmir"
+    sampling_interval_seconds: 300
+    status: "ACTIVE"

@@ -1,0 +1,38 @@
+# SkyGuard AI — Default System Configuration
+
+system:
+  project_name: "SkyGuard AI"
+  version: "0.1.0"
+  environment: "development"
+  log_level: "INFO"
+
+telemetry:
+  default_sampling_interval_seconds: 300  # 5 minutes default cadence
+  allowed_sampling_intervals_seconds: [60, 300, 600, 900, 1800, 3600]
+  missing_data_timeout_multiplier: 2.5    # Missing alert triggered after 2.5x expected interval
+  out_of_order_tolerance_seconds: 600
+
+spatial:
+  geodesic_distance_metric: "haversine"
+  default_neighbor_radius_km: 150.0
+  max_neighbors_for_consensus: 5
+  min_neighbors_required: 2
+  elevation_lapse_rate_c_per_km: 6.5      # Standard environmental lapse rate (°C/1000m)
+
+pipeline:
+  sliding_windows_minutes: [15, 60, 360, 1440]
+  batch_size: 1000
+  enable_imputation: true
+  imputation_strategy: "idw_spatial_temporal"
+
+storage:
+  database_type: "sqlite"
+  database_url: "sqlite:///./data/skyguard_dev.db"
+  raw_retention_days: -1                 # Permanent retention for raw observations
+  quality_retention_days: -1
+
+model:
+  registry_dir: "models/registry"
+  active_version: "v0.1.0_baseline"
+  anomaly_score_threshold: 0.75
+  min_anomaly_cluster_size: 1

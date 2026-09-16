@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "214140846/skills",
+      "sourceType": "github",
+      "skillPath": "skills/.experimental/frontend-design/SKILL.md",
+      "computedHash": "6219b42889144fbe744379441b178b4560eda9b613d5591959065b5939d88fb2"
+    },
+    "frontend-ui": {
+      "source": "scientiacapital/skills",
+      "sourceType": "github",
+      "skillPath": "active/frontend-ui-skill/SKILL.md",
+      "computedHash": "3089835520d9bed33d37cfab10a13c096414cae7bb254022ed9e1e94460804a1"
+    },
+    "shadcn": {
+      "source": "shadcn-ui/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "d04e43ec01e921558b93bb8046c14a42a22556689a2827243df900825a4e1604"
+    }
+  }
+}

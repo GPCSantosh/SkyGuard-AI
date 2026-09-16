@@ -1,0 +1,43 @@
+[
+  {
+    "station_id": "AWS_IND_DL_001",
+    "timestamp": "2026-09-16T12:00:00Z",
+    "temperature": 34.5,
+    "pressure": 1008.2,
+    "humidity": 62.0,
+    "latitude": 28.5847,
+    "longitude": 77.2060,
+    "elevation": 216.0,
+    "source": "HISTORICAL_CSV",
+    "metadata": {
+      "battery_voltage": 12.8,
+      "sensor_status": "OK"
+    }
+  },
+  {
+    "station_id": "AWS_IND_MH_001",
+    "timestamp": "2026-09-16T12:00:00Z",
+    "temperature": 29.8,
+    "pressure": 1012.4,
+    "humidity": 85.0,
+    "latitude": 18.9067,
+    "longitude": 72.8147,
+    "elevation": 11.0,
+    "source": "HISTORICAL_CSV",
+    "metadata": {
+      "battery_voltage": 12.6
+    }
+  },
+  {
+    "station_id": "AWS_IND_KA_001",
+    "timestamp": "2026-09-16T12:05:00Z",
+    "temperature": 26.2,
+    "pressure": 915.0,
+    "humidity": 70.5,
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "elevation": 920.0,
+    "source": "SIMULATOR",
+    "metadata": {}
+  }
+]
