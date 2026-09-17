@@ -11,13 +11,14 @@ from backend.app.connectors.live_qualification import (
 )
 from backend.app.connectors.mqtt import MQTTConnector
 from backend.app.connectors.simulator import SimulatorConnector
-from backend.app.connectors.weather_api import WeatherAPIConnector
+from backend.app.connectors.weather_api import OpenMeteoLiveConnector, WeatherAPIConnector
 
 __all__ = [
     "BaseConnector",
     "HistoricalCSVConnector",
     "SimulatorConnector",
     "WeatherAPIConnector",
+    "OpenMeteoLiveConnector",
     "MQTTConnector",
     "OpenMeteoQualificationAdapter",
     "LiveSourceHealthStatus",
@@ -25,4 +26,5 @@ __all__ = [
     "PressureSemantics",
     "QualificationGateResult",
 ]
+
 

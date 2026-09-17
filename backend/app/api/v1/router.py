@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from backend.app.api.v1.endpoints.anomalies import router as anomalies_router
 from backend.app.api.v1.endpoints.corrections import router as corrections_router
+from backend.app.api.v1.endpoints.live import router as live_router
 from backend.app.api.v1.endpoints.observations import router as observations_router
 from backend.app.api.v1.endpoints.replay import router as replay_router
 from backend.app.api.v1.endpoints.stations import router as stations_router
@@ -22,6 +23,8 @@ router.include_router(observations_router)
 router.include_router(system_router)
 router.include_router(replay_router)
 router.include_router(ws_router)
+router.include_router(live_router)
+
 
 
 @router.get("/health", tags=["Health"])

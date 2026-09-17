@@ -135,6 +135,18 @@ class LiveSourceSettings(BaseModel):
         default="msl",
         description="Expected pressure product semantics: 'msl' (sea-level) or 'surface' (station elevation)"
     )
+    retry_backoff_base_seconds: float = Field(
+        default=1.0,
+        ge=0.1,
+        le=10.0,
+        description="Base seconds for exponential backoff retry calculation"
+    )
+    stale_threshold_seconds: float = Field(
+        default=3600.0,
+        ge=60.0,
+        le=86400.0,
+        description="Maximum elapsed seconds before an observation is considered stale"
+    )
 
 
 class AppSettings(BaseSettings):

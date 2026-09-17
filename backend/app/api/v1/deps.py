@@ -105,3 +105,34 @@ def get_replay_engine() -> StreamReplayEngine:
                 corrupted_values={"humidity": 5.0},
             )
     return _replay_engine
+
+
+_live_connector = None
+_live_poller = None
+
+
+def get_live_connector():
+    """Get or create singleton OpenMeteoLiveConnector."""
+    global _live_connector
+    if _live_connector is None:
+        from backend.app.connectors.weather_api import OpenMeteoLiveConnector
+        _live_connector = OpenMeteoLiveConnector()
+    return _live_connector
+
+
+def get_live_poller():
+    """Get or create singleton LiveSourcePoller."""
+    global _live_poller
+    if _live_poller is None:
+        from backend.app.ingestion.live_poller import LiveSourcePoller
+        connector = get_live_connector()
+        engine = get_engine()
+        repo = get_repository()
+        _live_poller = LiveSourcePoller(
+            connector=connector,
+            engine=engine,
+            repository=repo,
+            topology=repo.topology,
+        )
+    return _live_poller
+

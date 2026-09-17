@@ -131,3 +131,24 @@ async def test_replay_endpoints():
     status_dict = await get_replay_status(replay=replay)
     assert "is_running" in status_dict
     assert "total_queued_observations" in status_dict
+
+
+@pytest.mark.anyio
+async def test_live_source_endpoints():
+    from backend.app.api.v1.deps import get_live_poller
+    from backend.app.api.v1.endpoints.live import get_live_source_health, get_live_status, trigger_immediate_poll
+
+    poller = get_live_poller()
+    
+    # 1. Source health
+    health_resp = await get_live_source_health(poller=poller)
+    assert "status" in health_resp
+    assert "health" in health_resp
+    assert "metrics" in health_resp
+    assert "stations_configured" in health_resp
+
+    # 2. Status
+    status_resp = await get_live_status(poller=poller)
+    assert "status" in status_resp
+    assert status_resp["provider"] == "open_meteo"
+
