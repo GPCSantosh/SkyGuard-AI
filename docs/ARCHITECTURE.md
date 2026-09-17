@@ -210,21 +210,30 @@ The real-time streaming layer processes individual `WeatherObservation` packets 
 
 See [`docs/REALTIME_ARCHITECTURE.md`](file:///d:/Projects/sih_project/docs/REALTIME_ARCHITECTURE.md) for full architectural details.
 
+## 13. Live AWS Source & API Ingestion Architecture
+External live weather feeds and hardware AWS telemetry enter the platform via provider-specific qualification adapters:
+- **Canonical Decoupling**: Downstream pipelines (feature extraction, ML anomaly detection, hybrid decision arbiter, sensor health index, correction engine) operate strictly on canonical `WeatherObservation` instances.
+- **Provider Adapters**: Handle provider-specific REST schemas, timestamp parsing to UTC, missingness conversions, and non-core parameter containment.
+- **Quality Gates**: The `LiveSourceQualificationGate` verifies geodetic coordinates, physical range bounds, thermodynamic consistency, and explicit pressure semantics (MSLP vs Surface pressure) before pipeline ingestion.
+- **Source Health vs Sensor Health**: Independent tracking of upstream API reachability, request latency, consecutive failures, and rate limits via `LiveSourceHealthStatus`.
+
+See [`docs/LIVE_SOURCE_QUALIFICATION.md`](file:///d:/Projects/sih_project/docs/LIVE_SOURCE_QUALIFICATION.md) for full qualification report.
+
 ---
 
-## 13. Future Edge Architecture
+## 14. Future Edge Architecture
 - *(Reserved for future phases)*
 - Quantized edge anomaly inference (ONNX Runtime / TFLite Micro).
 - Local SQLite buffering during communication outages with guaranteed catch-up sync.
 
-
 ---
 
-## 13. Security Considerations
+## 15. Security Considerations
 - **Environment Isolation**: All credentials and sensitive connection strings loaded via `.env` files; `.env` excluded from version control.
 - **Input Sanitization**: Pydantic schema validation on all API endpoints rejects malformed types, non-numeric strings, and out-of-range payloads.
 - **CORS & Rate Limiting**: Controlled origin whitelisting and rate limiting on public ingest endpoints.
 - **No Secret Leakage**: Stack traces and internal database errors masked in production responses.
+
 
 ---
 

@@ -36,3 +36,15 @@ model:
   active_version: "v0.1.0_baseline"
   anomaly_score_threshold: 0.75
   min_anomaly_cluster_size: 1
+
+live_source:
+  enabled: false
+  provider: "open_meteo"
+  base_url: "https://api.open-meteo.com/v1"
+  api_key: null
+  timeout_seconds: 10.0
+  poll_interval_seconds: 900
+  retry_limit: 3
+  rate_limit_per_minute: 60
+  pressure_product_type: "msl"
+

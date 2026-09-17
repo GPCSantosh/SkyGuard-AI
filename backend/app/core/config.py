@@ -87,6 +87,56 @@ class ModelSettings(BaseModel):
     min_anomaly_cluster_size: int = 1
 
 
+class LiveSourceSettings(BaseModel):
+    """Live Weather / AWS API source qualification and ingestion configuration."""
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    enabled: bool = Field(
+        default=False,
+        description="Whether live external API ingestion is enabled"
+    )
+    provider: str = Field(
+        default="open_meteo",
+        description="Live API provider identifier (e.g. open_meteo, noaa_live, imd_aws, generic_rest)"
+    )
+    base_url: str = Field(
+        default="https://api.open-meteo.com/v1",
+        description="Base HTTP REST API endpoint for the live weather source"
+    )
+    api_key: Optional[str] = Field(
+        default=None,
+        description="Optional authentication API key/token (never logged or serialized)"
+    )
+    timeout_seconds: float = Field(
+        default=10.0,
+        ge=1.0,
+        le=60.0,
+        description="HTTP request timeout in seconds"
+    )
+    poll_interval_seconds: int = Field(
+        default=900,
+        ge=60,
+        le=86400,
+        description="Live observation polling cadence in seconds (900s = 15min)"
+    )
+    retry_limit: int = Field(
+        default=3,
+        ge=0,
+        le=10,
+        description="Maximum consecutive retry attempts on transient network failure"
+    )
+    rate_limit_per_minute: int = Field(
+        default=60,
+        ge=1,
+        le=1000,
+        description="Maximum permitted requests per minute against the provider API"
+    )
+    pressure_product_type: str = Field(
+        default="msl",
+        description="Expected pressure product semantics: 'msl' (sea-level) or 'surface' (station elevation)"
+    )
+
+
 class AppSettings(BaseSettings):
     """Master application configuration with environment variable support."""
     
@@ -153,6 +203,7 @@ class AppSettings(BaseSettings):
     pipeline: PipelineSettings = Field(default_factory=PipelineSettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)
     model: ModelSettings = Field(default_factory=ModelSettings)
+    live_source: LiveSourceSettings = Field(default_factory=LiveSourceSettings)
 
 
 def load_yaml_config(config_path: Optional[Union[Path, str]] = None) -> Dict[str, Any]:
@@ -189,6 +240,8 @@ def get_settings(config_file: Optional[str] = None) -> AppSettings:
         init_kwargs["storage"] = StorageSettings(**yaml_data["storage"])
     if "model" in yaml_data:
         init_kwargs["model"] = ModelSettings(**yaml_data["model"])
+    if "live_source" in yaml_data:
+        init_kwargs["live_source"] = LiveSourceSettings(**yaml_data["live_source"])
 
     settings = AppSettings(**init_kwargs)
 
@@ -200,5 +253,22 @@ def get_settings(config_file: Optional[str] = None) -> AppSettings:
     elif "telemetry" in yaml_data and "default_sampling_interval_seconds" in yaml_data["telemetry"]:
         settings.observation_interval_seconds = yaml_data["telemetry"]["default_sampling_interval_seconds"]
 
+    # Environment variable overrides for live source
+    if "SKYGUARD_LIVE_SOURCE_ENABLED" in os.environ:
+        settings.live_source.enabled = os.environ["SKYGUARD_LIVE_SOURCE_ENABLED"].lower() in ("true", "1", "yes")
+    if "SKYGUARD_LIVE_SOURCE_BASE_URL" in os.environ:
+        settings.live_source.base_url = os.environ["SKYGUARD_LIVE_SOURCE_BASE_URL"]
+    if "SKYGUARD_LIVE_SOURCE_API_KEY" in os.environ:
+        settings.live_source.api_key = os.environ["SKYGUARD_LIVE_SOURCE_API_KEY"]
+    if "SKYGUARD_LIVE_SOURCE_TIMEOUT_SECONDS" in os.environ:
+        settings.live_source.timeout_seconds = float(os.environ["SKYGUARD_LIVE_SOURCE_TIMEOUT_SECONDS"])
+    if "SKYGUARD_LIVE_SOURCE_POLL_INTERVAL_SECONDS" in os.environ:
+        settings.live_source.poll_interval_seconds = int(os.environ["SKYGUARD_LIVE_SOURCE_POLL_INTERVAL_SECONDS"])
+    if "SKYGUARD_LIVE_SOURCE_RETRY_LIMIT" in os.environ:
+        settings.live_source.retry_limit = int(os.environ["SKYGUARD_LIVE_SOURCE_RETRY_LIMIT"])
+    if "SKYGUARD_LIVE_SOURCE_PRESSURE_PRODUCT_TYPE" in os.environ:
+        settings.live_source.pressure_product_type = os.environ["SKYGUARD_LIVE_SOURCE_PRESSURE_PRODUCT_TYPE"]
+
     return settings
+
 
