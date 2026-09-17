@@ -412,7 +412,17 @@ class RealTimeProcessingEngine:
                 recommended_values={"temperature_c": corr_rec.recommended_value if corr_rec else None},
                 explanation_summary=explanation.summary,
             )
-            self.repository.save_anomaly_event(event_rec, explanation=explanation)
+
+            prov_data = {
+                "model_id": self.ml_model.model_id if self.ml_model else "none",
+                "model_version": getattr(self.ml_model, "version", "v0.1.0_baseline") if self.ml_model else "none",
+                "feature_version": "v1.0.0",
+                "decision_engine_version": "hybrid_v1.0.0",
+                "explanation_version": "v1.0.0",
+            }
+            self.repository.save_anomaly_event(event_rec, explanation=explanation, provenance=prov_data)
+
+
 
         t_persist_end = time.perf_counter_ns()
         total_pipeline_ms = (time.perf_counter_ns() - t_start) / 1e6

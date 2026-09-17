@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import pytest
 
 from backend.app.core.database import DatabaseRepository
+from backend.app.db.session import DatabaseSessionManager
 from backend.app.models.observation import ObservationSource, QualityStatus, WeatherObservation
 from backend.app.models.processing import AnomalyEventRecord
 from ml.decision.schema import HybridDecisionType
@@ -11,10 +12,12 @@ from ml.spatial.topology import SpatialNetworkTopology, StationNode
 
 
 @pytest.fixture
-def repo():
+def repo(tmp_path):
+    db_file = tmp_path / "test_repo.db"
+    session_mgr = DatabaseSessionManager(f"sqlite:///{db_file}")
     topo = SpatialNetworkTopology()
     topo.add_station(StationNode(station_id="STN_001", name="Station 1", latitude=28.6, longitude=77.2, elevation_m=200.0))
-    return DatabaseRepository(topology=topo)
+    return DatabaseRepository(topology=topo, session_manager=session_mgr)
 
 
 def test_observation_persistence_and_latest(repo):
@@ -102,7 +105,7 @@ def test_anomaly_event_persistence_and_filtering(repo):
     assert single.decision == HybridDecisionType.UNCERTAIN
 
 
-def test_system_health_active_stations_matches_topology_not_observations():
+def test_system_health_active_stations_matches_topology_not_observations(tmp_path):
     """Regression guard: active_monitored_stations must equal configured network stations,
     NOT the number of observation records in the store.
 
@@ -110,6 +113,8 @@ def test_system_health_active_stations_matches_topology_not_observations():
     while only 1 physical station was configured. That caused the dashboard to
     display '100 active stations' instead of the correct network size.
     """
+    db_file = tmp_path / "test_health.db"
+    session_mgr = DatabaseSessionManager(f"sqlite:///{db_file}")
     topo = SpatialNetworkTopology()
     topo.add_station(
         StationNode(station_id="GUARD_001", name="Guard Station 1", latitude=28.6, longitude=77.2, elevation_m=200.0)
@@ -117,7 +122,7 @@ def test_system_health_active_stations_matches_topology_not_observations():
     topo.add_station(
         StationNode(station_id="GUARD_002", name="Guard Station 2", latitude=28.7, longitude=77.3, elevation_m=210.0)
     )
-    repo = DatabaseRepository(topology=topo)
+    repo = DatabaseRepository(topology=topo, session_manager=session_mgr)
 
     # Persist 50 observation records from a single station — simulating a busy data stream
     for i in range(50):

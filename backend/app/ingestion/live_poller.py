@@ -73,7 +73,9 @@ class LiveSourcePoller:
             expected_cadence_seconds=float(self.poll_interval_seconds),
             max_history_records=live_cfg.max_history_records,
             max_outage_episodes=live_cfg.max_outage_episodes,
+            repository=self.repository,
         )
+
 
         # Pre-seed stations in state machine
         for s_id in self.topology.stations.keys():

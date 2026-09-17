@@ -68,13 +68,28 @@ class PipelineSettings(BaseModel):
 
 
 class StorageSettings(BaseModel):
-    """Database and file storage settings."""
+    """Database and persistence storage settings."""
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     database_type: str = "sqlite"
     database_url: str = "sqlite:///./data/skyguard_dev.db"
+    pool_size: int = 10
+    max_overflow: int = 20
+    pool_timeout_seconds: int = 30
+    auto_migrate: bool = True
+    
+    # Retention policies (-1 indicates retain indefinitely / non-destructive)
+    raw_payload_retention_days: int = -1
     raw_retention_days: int = -1
     quality_retention_days: int = -1
+    observation_retention_days: int = -1
+    anomaly_retention_days: int = -1
+    explanation_retention_days: int = -1
+    sensor_health_retention_days: int = -1
+    source_health_retention_days: int = -1
+    outage_episode_retention_days: int = -1
+    correction_retention_days: int = -1
+
 
 
 class ModelSettings(BaseModel):

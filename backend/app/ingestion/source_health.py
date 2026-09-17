@@ -131,6 +131,7 @@ class SourceHealthStateMachine:
         expected_cadence_seconds: float = 900.0,
         max_history_records: int = 50,
         max_outage_episodes: int = 20,
+        repository: Optional[Any] = None,
     ) -> None:
         self.provider = provider
         self.outage_consecutive_failures = outage_consecutive_failures
@@ -139,6 +140,8 @@ class SourceHealthStateMachine:
         self.expected_cadence_seconds = expected_cadence_seconds
         self.max_history_records = max_history_records
         self.max_outage_episodes = max_outage_episodes
+        self.repository = repository
+
 
         # Current state
         self._current_state: SourceHealthState = SourceHealthState.HEALTHY
@@ -237,6 +240,11 @@ class SourceHealthStateMachine:
             metadata={"consecutive_failures": self._consecutive_failures, "consecutive_successes": self._consecutive_successes},
         )
         self._transitions.append(rec)
+        if self.repository is not None and hasattr(self.repository, "save_source_transition"):
+            try:
+                self.repository.save_source_transition(rec, source=self.provider)
+            except Exception as repo_err:
+                logger.warning("Failed to persist source transition to repository: %s", str(repo_err))
 
         # Structured operational log
         logger.info(
@@ -272,6 +280,11 @@ class SourceHealthStateMachine:
                     is_ongoing=True,
                 )
                 self._episodes.append(self._active_episode)
+                if self.repository is not None and hasattr(self.repository, "save_outage_episode"):
+                    try:
+                        self.repository.save_outage_episode(self._active_episode)
+                    except Exception as repo_err:
+                        logger.warning("Failed to persist outage episode to repository: %s", str(repo_err))
             else:
                 self._active_episode.current_state = new_state
                 if category != ErrorCategory.NONE and category.value not in self._active_episode.failure_categories:
@@ -279,6 +292,11 @@ class SourceHealthStateMachine:
                 if affected_stations:
                     merged = list(set(self._active_episode.affected_stations + affected_stations))
                     self._active_episode.affected_stations = merged
+                if self.repository is not None and hasattr(self.repository, "save_outage_episode"):
+                    try:
+                        self.repository.save_outage_episode(self._active_episode)
+                    except Exception as repo_err:
+                        logger.warning("Failed to update outage episode in repository: %s", str(repo_err))
 
         elif new_state == SourceHealthState.HEALTHY:
             if self._active_episode is not None:
@@ -294,7 +312,13 @@ class SourceHealthStateMachine:
                     self._active_episode.duration_seconds,
                     self._active_episode.observation_loss_estimate,
                 )
+                if self.repository is not None and hasattr(self.repository, "save_outage_episode"):
+                    try:
+                        self.repository.save_outage_episode(self._active_episode)
+                    except Exception as repo_err:
+                        logger.warning("Failed to persist resolved outage episode to repository: %s", str(repo_err))
                 self._active_episode = None
+
 
     def record_poll_cycle_success(
         self,

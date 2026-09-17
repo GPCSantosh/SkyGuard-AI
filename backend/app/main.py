@@ -26,8 +26,17 @@ async def lifespan(app: FastAPI):
         "Observation Cadence: %ds (5-min default)",
         settings.observation_interval_seconds
     )
+    # Automated Database Migration / Schema check on startup
+    if settings.storage.auto_migrate:
+        try:
+            from backend.app.db.migrations import run_db_migrations
+            run_db_migrations()
+        except Exception as mig_err:
+            logger.warning("Automated migration check note: %s (fallback schema initialized)", str(mig_err))
+    
     yield
     logger.info("Shutting down SkyGuard AI backend service.")
+
 
 
 app = FastAPI(
