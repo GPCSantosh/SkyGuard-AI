@@ -24,7 +24,7 @@ from backend.app.models.events import (
     StationStatusChangedPayload,
     WebSocketEnvelope,
 )
-from backend.app.models.observation import WeatherObservation
+from backend.app.models.observation import QualityStatus, WeatherObservation
 from backend.app.models.processing import (
     AnomalyEventRecord,
     ProcessingLatencyBreakdown,
@@ -305,10 +305,36 @@ class RealTimeProcessingEngine:
 
         # 5. Hybrid Decision Arbitration
         t_decision_start = time.perf_counter_ns()
-        # Build comprehensive ObservationEvidence
+        missing_vars = []
+        if observation.temperature is None:
+            missing_vars.append("temperature_c")
+        if observation.humidity is None:
+            missing_vars.append("relative_humidity_pct")
+        if observation.pressure is None:
+            missing_vars.append("sea_level_pressure_hpa")
+
+        is_phys_out = False
+        if observation.temperature is not None and (observation.temperature < -50.0 or observation.temperature > 60.0):
+            is_phys_out = True
+        if observation.humidity is not None and (observation.humidity < 0.0 or observation.humidity > 100.0):
+            is_phys_out = True
+        if observation.pressure is not None and (observation.pressure < 850.0 or observation.pressure > 1090.0):
+            is_phys_out = True
+
+        raw_qs = str(observation.data_quality_status.value if hasattr(observation.data_quality_status, "value") else observation.data_quality_status)
+        mapped_qs = "CORRUPTED" if raw_qs == "ERROR" else ("GAP" if raw_qs == "MISSING" else raw_qs)
+
         data_quality_ev = DataQualityEvidence(
-            quality_status=str(observation.data_quality_status),
-            evidence_state=EvidenceState.SUPPORTS if observation.data_quality_status != "VALID" else EvidenceState.NEUTRAL,
+            quality_status=mapped_qs,
+            missing_fields=missing_vars,
+            is_duplicate=(ordering_status == ProcessingStatus.DUPLICATE_SKIPPED),
+            is_out_of_order=(ordering_status in (ProcessingStatus.OUT_OF_ORDER, ProcessingStatus.LATE_ARRIVAL)),
+            is_physical_out_of_bounds=is_phys_out,
+            evidence_state=EvidenceState.SUPPORTS if (
+                raw_qs not in ("VALID", QualityStatus.VALID)
+                or len(missing_vars) > 0
+                or is_phys_out
+            ) else EvidenceState.NEUTRAL,
         )
         temporal_ev = TemporalEvidence(
             temp_rate_per_min=features.get("temperature_c_rate_per_minute"),

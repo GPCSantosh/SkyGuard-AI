@@ -255,6 +255,9 @@ class HealthFeatureExtractor:
         deltas: List[float] = []
 
         for dec in decisions:
+            # Genuine regional events must not be counted as hardware calibration drift
+            if dec.decision == HybridDecisionType.POSSIBLE_GENUINE_EVENT:
+                continue
             spat = dec.evidence.spatial
             # Target minus neighbor mean is a robust drift indicator
             if spat.temp_target_minus_mean is not None and target_param == "temperature_c":
