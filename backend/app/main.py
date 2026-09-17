@@ -4,18 +4,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.api.v1.endpoints.health import router as health_router
+from backend.app.api.v1.endpoints.ws import router as ws_router
 from backend.app.api.v1.router import router as api_v1_router
 from backend.app.core.config import get_settings
 from backend.app.core.logging import get_logger, setup_logging
 
 settings = get_settings()
-setup_logging(log_level=settings.log_level)
+setup_logging(log_level=settings.log_level, log_format=settings.log_format)
 logger = get_logger("main")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager for startup and shutdown events."""
+    """Lifespan context manager for deterministic startup and graceful shutdown."""
     logger.info(
         "Initializing %s (v%s) in [%s] mode",
         settings.system.project_name,
@@ -26,17 +28,40 @@ async def lifespan(app: FastAPI):
         "Observation Cadence: %ds (5-min default)",
         settings.observation_interval_seconds
     )
-    # Automated Database Migration / Schema check on startup
+    # Automated Database Migration / Schema check on startup (controlled by settings.storage.auto_migrate)
     if settings.storage.auto_migrate:
         try:
             from backend.app.db.migrations import run_db_migrations
             run_db_migrations()
         except Exception as mig_err:
             logger.warning("Automated migration check note: %s (fallback schema initialized)", str(mig_err))
-    
-    yield
-    logger.info("Shutting down SkyGuard AI backend service.")
+    else:
+        logger.info("Auto-migration disabled (production mode: explicit alembic migration expected)")
 
+    # Start live polling task if enabled in configuration
+    poller_task = None
+    if settings.live_source.enabled:
+        from backend.app.api.v1.deps import get_live_poller
+        poller = get_live_poller()
+        if not poller.is_polling:
+            logger.info("Starting background live source poller for provider '%s'...", settings.live_source.provider)
+            poller_task = await poller.start_polling()
+
+    yield
+
+    # Graceful shutdown
+    logger.info("Shutting down SkyGuard AI backend service...")
+    if settings.live_source.enabled:
+        try:
+            from backend.app.api.v1.deps import get_live_poller
+            poller = get_live_poller()
+            if poller.is_polling:
+                logger.info("Stopping background live poller...")
+                await poller.stop_polling()
+        except Exception as stop_err:
+            logger.warning("Error stopping live poller on shutdown: %s", str(stop_err))
+
+    logger.info("SkyGuard AI backend shutdown completed cleanly.")
 
 
 app = FastAPI(
@@ -51,15 +76,14 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from backend.app.api.v1.endpoints.ws import router as ws_router
-
-# Include API v1 Router & WebSocket Router
+# Include Health Probes, API v1 Router & WebSocket Router
+app.include_router(health_router)
 app.include_router(api_v1_router, prefix=settings.api_prefix)
 app.include_router(ws_router)
 

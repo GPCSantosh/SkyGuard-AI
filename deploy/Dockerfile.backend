@@ -1,0 +1,69 @@
+# ==============================================================================
+# SkyGuard AI — Production Backend Dockerfile
+# Multi-stage Python 3.11-slim container with non-root execution
+# ==============================================================================
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# Install system build dependencies for compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency specifications
+COPY requirements.txt pyproject.toml ./
+
+# Install wheels into local directory
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ------------------------------------------------------------------------------
+# Final Runtime Stage
+# ------------------------------------------------------------------------------
+FROM python:3.11-slim AS runtime
+
+WORKDIR /app
+
+# Install runtime libpq for PostgreSQL connectivity and curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root system user and group
+RUN groupadd -g 1001 skyguard && \
+    useradd -u 1001 -g skyguard -s /bin/bash -m skyguard
+
+# Copy installed python dependencies from builder
+COPY --from=builder /root/.local /home/skyguard/.local
+ENV PATH=/home/skyguard/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+# Copy application source code and configuration
+COPY --chown=skyguard:skyguard alembic.ini ./
+COPY --chown=skyguard:skyguard alembic ./alembic
+COPY --chown=skyguard:skyguard backend ./backend
+COPY --chown=skyguard:skyguard configs ./configs
+COPY --chown=skyguard:skyguard ml ./ml
+COPY --chown=skyguard:skyguard models ./models
+COPY --chown=skyguard:skyguard data ./data
+
+# Create directory for runtime logs and data with proper permissions
+RUN mkdir -p /app/logs /app/data && chown -R skyguard:skyguard /app
+
+# Switch to non-root user
+USER skyguard
+
+# Expose FastAPI backend port
+EXPOSE 8000
+
+# Health check probe hitting the liveness probe endpoint
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://127.0.0.1:8000/health/live || exit 1
+
+# Default command starts Uvicorn ASGI server
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

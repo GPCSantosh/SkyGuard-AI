@@ -1,0 +1,114 @@
+# ==============================================================================
+# SkyGuard AI — Root Docker Compose Configuration
+# ==============================================================================
+
+version: "3.8"
+
+networks:
+  skyguard-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: skyguard-postgres
+    restart: unless-stopped
+    networks:
+      - skyguard-net
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-skyguard_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-skyguard_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skyguard_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skyguard_user} -d ${POSTGRES_DB:-skyguard_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  migration:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    container_name: skyguard-migration
+    networks:
+      - skyguard-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SKYGUARD_ENV: production
+      SKYGUARD_DATABASE_URL: postgresql://${POSTGRES_USER:-skyguard_user}:${POSTGRES_PASSWORD:-skyguard_password}@postgres:5432/${POSTGRES_DB:-skyguard_ai}
+      SKYGUARD_AUTO_MIGRATE: "false"
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    container_name: skyguard-backend
+    restart: unless-stopped
+    networks:
+      - skyguard-net
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      SKYGUARD_ENV: ${SKYGUARD_ENV:-production}
+      SKYGUARD_DEBUG: ${SKYGUARD_DEBUG:-false}
+      SKYGUARD_LOG_LEVEL: ${SKYGUARD_LOG_LEVEL:-INFO}
+      SKYGUARD_LOG_FORMAT: ${SKYGUARD_LOG_FORMAT:-json}
+      SKYGUARD_API_HOST: 0.0.0.0
+      SKYGUARD_API_PORT: 8000
+      SKYGUARD_DATABASE_URL: postgresql://${POSTGRES_USER:-skyguard_user}:${POSTGRES_PASSWORD:-skyguard_password}@postgres:5432/${POSTGRES_DB:-skyguard_ai}
+      SKYGUARD_AUTO_MIGRATE: "false"
+      SKYGUARD_OBSERVATION_INTERVAL_SECONDS: ${SKYGUARD_OBSERVATION_INTERVAL_SECONDS:-300}
+      SKYGUARD_OPERATIONAL_API_KEY: ${SKYGUARD_OPERATIONAL_API_KEY:-}
+      SKYGUARD_ENABLE_PUBLIC_POLL_TRIGGER: ${SKYGUARD_ENABLE_PUBLIC_POLL_TRIGGER:-false}
+      SKYGUARD_LIVE_SOURCE_ENABLED: ${SKYGUARD_LIVE_SOURCE_ENABLED:-false}
+      SKYGUARD_LIVE_SOURCE_PROVIDER: ${SKYGUARD_LIVE_SOURCE_PROVIDER:-open_meteo}
+      SKYGUARD_LIVE_SOURCE_BASE_URL: ${SKYGUARD_LIVE_SOURCE_BASE_URL:-https://api.open-meteo.com/v1}
+      SKYGUARD_LIVE_SOURCE_API_KEY: ${SKYGUARD_LIVE_SOURCE_API_KEY:-}
+      SKYGUARD_LIVE_SOURCE_POLL_INTERVAL_SECONDS: ${SKYGUARD_LIVE_SOURCE_POLL_INTERVAL_SECONDS:-900}
+      SKYGUARD_CORS_ORIGINS: ${SKYGUARD_CORS_ORIGINS:-["*"]}
+    expose:
+      - "8000"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+    container_name: skyguard-frontend
+    restart: unless-stopped
+    networks:
+      - skyguard-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

@@ -141,8 +141,23 @@ class LiveSourcePoller:
             except asyncio.CancelledError:
                 pass
 
+        self._polling_task = None
         self.connector.disconnect()
         logger.info("LiveSourcePoller gracefully stopped.")
+
+    @property
+    def is_polling(self) -> bool:
+        """Alias for is_running."""
+        return self._is_running
+
+    async def start_polling(self) -> Optional[asyncio.Task]:
+        """Alias for start()."""
+        await self.start()
+        return self._polling_task
+
+    async def stop_polling(self) -> None:
+        """Alias for stop()."""
+        await self.stop()
 
     async def _run_loop(self) -> None:
         """Internal infinite loop polling all stations at configured intervals."""

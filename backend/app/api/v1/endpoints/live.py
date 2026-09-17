@@ -7,12 +7,46 @@ latency diagnostics, and station freshness tracking for SkyGuard live operations
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from backend.app.api.v1.deps import get_live_poller
+from backend.app.core.config import get_settings
 from backend.app.ingestion.live_poller import LiveSourcePoller
 
 router = APIRouter(prefix="/live", tags=["Live Source Operations"])
+settings = get_settings()
+
+
+def verify_operational_access(
+    x_operational_key: Optional[str] = Header(None, alias="X-Operational-Key"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> bool:
+    """Verify authorization for manual operational commands in production."""
+    current_settings = get_settings()
+    is_prod = current_settings.env.lower() in ("production", "prod")
+    
+    if not is_prod or current_settings.enable_public_poll_trigger:
+        return True
+
+    expected_key = current_settings.operational_api_key
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manual polling triggers are locked in production when SKYGUARD_OPERATIONAL_API_KEY is not configured.",
+        )
+
+    bearer_token = None
+    if authorization and authorization.startswith("Bearer "):
+        bearer_token = authorization.split(" ", 1)[1].strip()
+
+    provided_key = x_operational_key or bearer_token
+    if not provided_key or provided_key != expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing operational key for production poll trigger.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return True
 
 
 @router.get("/source-health")
@@ -43,6 +77,7 @@ async def get_live_status(
 @router.post("/poll-now")
 async def trigger_immediate_poll(
     poller: LiveSourcePoller = Depends(get_live_poller),
+    _authorized: bool = Depends(verify_operational_access),
 ) -> Dict[str, Any]:
     """Trigger an immediate synchronous poll cycle across all configured stations."""
     results = await poller.poll_cycle_once()

@@ -141,6 +141,16 @@ class DatabaseSessionManager:
             logger.error("Database connection check failed: %s", str(e))
             return False
 
+    def check_health(self) -> Dict[str, Any]:
+        """Verify database connectivity and return health report dictionary."""
+        is_conn = self.check_connection()
+        return {
+            "status": "healthy" if is_conn else "unreachable",
+            "dialect": self.engine.dialect.name,
+            "connected": is_conn,
+            "metrics": self.metrics.to_dict(),
+        }
+
     @contextmanager
     def session(self) -> Generator[Session, None, None]:
         """Provide a transactional database session context."""

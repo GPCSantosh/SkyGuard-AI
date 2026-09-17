@@ -247,6 +247,28 @@ class AppSettings(BaseSettings):
         validation_alias=AliasChoices("SKYGUARD_DATABASE_URL", "database_url")
     )
 
+    # Operational & Deployment Security
+    operational_api_key: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("SKYGUARD_OPERATIONAL_API_KEY", "operational_api_key"),
+        description="Secret key required for administrative and manual operational endpoints"
+    )
+    cors_origins: List[str] = Field(
+        default_factory=lambda: ["*"],
+        validation_alias=AliasChoices("SKYGUARD_CORS_ORIGINS", "cors_origins"),
+        description="Allowed CORS origins list"
+    )
+    log_format: str = Field(
+        default="text",
+        validation_alias=AliasChoices("SKYGUARD_LOG_FORMAT", "log_format"),
+        description="Log formatting: 'text' (default) or 'json' (structured container logging)"
+    )
+    enable_public_poll_trigger: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SKYGUARD_ENABLE_PUBLIC_POLL_TRIGGER", "enable_public_poll_trigger"),
+        description="Whether POST /api/v1/live/poll-now allows unauthenticated triggers in production"
+    )
+
     # Sub-component configurations
     system: SystemSettings = Field(default_factory=SystemSettings)
     telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
@@ -295,6 +317,25 @@ def get_settings(config_file: Optional[str] = None) -> AppSettings:
         init_kwargs["live_source"] = LiveSourceSettings(**yaml_data["live_source"])
 
     settings = AppSettings(**init_kwargs)
+
+    # In production, default auto_migrate to False unless explicitly enabled via env var
+    if settings.env.lower() in ("production", "prod"):
+        settings.storage.auto_migrate = False
+
+    if "SKYGUARD_AUTO_MIGRATE" in os.environ:
+        settings.storage.auto_migrate = os.environ["SKYGUARD_AUTO_MIGRATE"].lower() in ("true", "1", "yes")
+
+    # Handle CORS origins from environment variable (comma-separated or JSON list)
+    if "SKYGUARD_CORS_ORIGINS" in os.environ:
+        raw_cors = os.environ["SKYGUARD_CORS_ORIGINS"].strip()
+        if raw_cors.startswith("[") and raw_cors.endswith("]"):
+            try:
+                import json
+                settings.cors_origins = json.loads(raw_cors)
+            except Exception:
+                settings.cors_origins = [o.strip() for o in raw_cors.strip("[]").split(",") if o.strip()]
+        else:
+            settings.cors_origins = [o.strip() for o in raw_cors.split(",") if o.strip()]
 
     # Synchronize top-level observation interval with telemetry sub-model if needed
     if "SKYGUARD_OBSERVATION_INTERVAL_SECONDS" in os.environ:
