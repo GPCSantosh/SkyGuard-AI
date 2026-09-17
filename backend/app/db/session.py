@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 from typing import Any, Dict, Generator, Optional
 from sqlalchemy import Engine, create_engine, event, text
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.core.config import get_settings
@@ -83,8 +84,8 @@ def create_skyguard_engine(database_url: Optional[str] = None) -> Engine:
     url = database_url or settings.database_url
 
     if url.startswith("sqlite"):
-        # Ensure parent directory exists for file-based SQLite
-        if not url.startswith("sqlite:///:memory:") and "///" in url:
+        is_memory = url in ("sqlite:///:memory:", "sqlite://", "sqlite:///")
+        if not is_memory and "///" in url:
             db_path_str = url.split("///")[-1]
             db_path = Path(db_path_str)
             db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,6 +93,7 @@ def create_skyguard_engine(database_url: Optional[str] = None) -> Engine:
         engine = create_engine(
             url,
             connect_args={"check_same_thread": False},
+            poolclass=StaticPool if is_memory else None,
             echo=False,
         )
         event.listen(engine, "connect", _sqlite_on_connect)

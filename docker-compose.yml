@@ -25,8 +25,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skyguard_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    expose:
+      - "5432"
+    # Un-comment or define POSTGRES_PORT in .env only if external host access is explicitly needed
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skyguard_user} -d ${POSTGRES_DB:-skyguard_ai}"]
       interval: 10s

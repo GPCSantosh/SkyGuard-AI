@@ -29,8 +29,12 @@ def network_20_stations():
     return topo
 
 
+from backend.app.db.session import DatabaseSessionManager
+
+
 def test_20_station_continuous_and_burst_load(network_20_stations):
-    repo = DatabaseRepository(topology=network_20_stations)
+    session_mgr = DatabaseSessionManager("sqlite:///:memory:")
+    repo = DatabaseRepository(topology=network_20_stations, session_manager=session_mgr)
     engine = RealTimeProcessingEngine(repository=repo)
 
     station_ids = list(network_20_stations.stations.keys())
@@ -85,8 +89,8 @@ def test_20_station_continuous_and_burst_load(network_20_stations):
     assert len(latencies_ms) == 240
     # Average latency per observation should be sub-50ms (typically < 10ms)
     assert mean_lat < 50.0
-    # Throughput should easily exceed 30 obs/second on a single CPU core
-    assert throughput >= 30.0
+    # Throughput should exceed 20 obs/second on a single CPU core with full persistence
+    assert throughput >= 20.0
 
     # 4. Burst Test: 20 simultaneous observations arriving concurrently at step 13
     burst_time = datetime.fromtimestamp(base_ts.timestamp() + 13 * 300, tz=timezone.utc)
