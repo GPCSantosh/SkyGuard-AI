@@ -147,6 +147,30 @@ class LiveSourceSettings(BaseModel):
         le=86400.0,
         description="Maximum elapsed seconds before an observation is considered stale"
     )
+    outage_consecutive_failures: int = Field(
+        default=3,
+        ge=1,
+        le=20,
+        description="Consecutive poll cycle failures before declaring source DISCONNECTED"
+    )
+    recovery_required_successes: int = Field(
+        default=2,
+        ge=1,
+        le=10,
+        description="Consecutive successful poll cycles required to restore HEALTHY state"
+    )
+    max_history_records: int = Field(
+        default=50,
+        ge=10,
+        le=500,
+        description="Maximum bounded state transitions retained in memory"
+    )
+    max_outage_episodes: int = Field(
+        default=20,
+        ge=5,
+        le=200,
+        description="Maximum bounded outage episodes retained in memory"
+    )
 
 
 class AppSettings(BaseSettings):
@@ -280,6 +304,12 @@ def get_settings(config_file: Optional[str] = None) -> AppSettings:
         settings.live_source.retry_limit = int(os.environ["SKYGUARD_LIVE_SOURCE_RETRY_LIMIT"])
     if "SKYGUARD_LIVE_SOURCE_PRESSURE_PRODUCT_TYPE" in os.environ:
         settings.live_source.pressure_product_type = os.environ["SKYGUARD_LIVE_SOURCE_PRESSURE_PRODUCT_TYPE"]
+    if "SKYGUARD_LIVE_SOURCE_STALE_THRESHOLD_SECONDS" in os.environ:
+        settings.live_source.stale_threshold_seconds = float(os.environ["SKYGUARD_LIVE_SOURCE_STALE_THRESHOLD_SECONDS"])
+    if "SKYGUARD_LIVE_SOURCE_OUTAGE_CONSECUTIVE_FAILURES" in os.environ:
+        settings.live_source.outage_consecutive_failures = int(os.environ["SKYGUARD_LIVE_SOURCE_OUTAGE_CONSECUTIVE_FAILURES"])
+    if "SKYGUARD_LIVE_SOURCE_RECOVERY_REQUIRED_SUCCESSES" in os.environ:
+        settings.live_source.recovery_required_successes = int(os.environ["SKYGUARD_LIVE_SOURCE_RECOVERY_REQUIRED_SUCCESSES"])
 
     return settings
 

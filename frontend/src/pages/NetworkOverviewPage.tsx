@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStations } from '../hooks/useStations';
 import { useAnomalies } from '../hooks/useAnomalies';
-import { useSystemHealth } from '../hooks/useSystem';
+import { useSystemHealth, useLiveSourceHealth, useTriggerLivePoll } from '../hooks/useSystem';
 import { NetworkMap } from '../components/NetworkMap';
 import { AlertList } from '../components/AlertList';
 import { MetricTable, ColumnDef } from '../components/MetricTable';
@@ -16,13 +16,23 @@ import {
   formatLatency,
   formatIsoUtc,
 } from '../utils/formatters';
-import { Radio, AlertTriangle, ShieldCheck, Search } from 'lucide-react';
+import {
+  Radio,
+  AlertTriangle,
+  ShieldCheck,
+  Search,
+  Globe,
+  RefreshCw,
+  AlertOctagon,
+} from 'lucide-react';
 
 export const NetworkOverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: stations = [], isLoading: isLoadingStations } = useStations();
   const { data: anomalyData, isLoading: isLoadingAnomalies } = useAnomalies({ limit: 10 });
   const { data: systemHealth } = useSystemHealth();
+  const { data: liveSource } = useLiveSourceHealth();
+  const pollMutation = useTriggerLivePoll();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const activeAnomalies = anomalyData?.items || [];
@@ -58,6 +68,28 @@ export const NetworkOverviewPage: React.FC = () => {
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (s.state && s.state.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Source state badge color helper
+  const getSourceBadge = (state?: string) => {
+    switch (state) {
+      case 'HEALTHY':
+        return { bg: 'bg-emerald-950 text-emerald-300 border-emerald-800', dot: 'bg-emerald-400', label: 'SOURCE: HEALTHY' };
+      case 'DEGRADED':
+        return { bg: 'bg-amber-950 text-amber-300 border-amber-800', dot: 'bg-amber-400', label: 'SOURCE: DEGRADED' };
+      case 'STALE':
+        return { bg: 'bg-yellow-950 text-yellow-300 border-yellow-800', dot: 'bg-yellow-400', label: 'SOURCE: STALE FEED' };
+      case 'DISCONNECTED':
+        return { bg: 'bg-red-950 text-red-300 border-red-800', dot: 'bg-red-400', label: 'SOURCE: DISCONNECTED' };
+      case 'RATE_LIMITED':
+        return { bg: 'bg-orange-950 text-orange-300 border-orange-800', dot: 'bg-orange-400', label: 'SOURCE: RATE LIMITED (429)' };
+      case 'AUTH_ERROR':
+        return { bg: 'bg-red-950 text-red-300 border-red-800', dot: 'bg-red-400', label: 'SOURCE: AUTH ERROR (401/403)' };
+      default:
+        return { bg: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-400', label: 'SOURCE: UNKNOWN' };
+    }
+  };
+
+  const sourceBadge = getSourceBadge(liveSource?.source_state || liveSource?.status);
 
   const columns: ColumnDef<StationItem>[] = [
     {
@@ -153,7 +185,78 @@ export const NetworkOverviewPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1. Compact Network Operational Status Strip (Prioritizing Active Anomalies & Health) */}
+      {/* 1. Dedicated Live Source & Upstream Ingestion Operations Bar (Phase 11C) */}
+      <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Upstream Source Badge */}
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-ops-weather" />
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-mono border flex items-center gap-1.5 font-bold ${sourceBadge.bg}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${sourceBadge.dot}`} />
+                {sourceBadge.label}
+              </span>
+              <span className="text-[11px] font-mono text-slate-400">
+                Provider: <strong className="text-slate-200 uppercase">{liveSource?.provider || 'Open-Meteo'}</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Station Freshness Layer Breakdown (Explicitly separated from Sensor Health) */}
+          <div className="flex items-center gap-2 font-mono text-[11px] border-l border-border-subtle pl-4">
+            <span className="text-slate-400 text-[10px] uppercase">Telemetry Ingestion:</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">
+              {liveSource?.counts?.live_stations ?? activeStations} LIVE
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-950 text-amber-300 border border-amber-800">
+              {liveSource?.counts?.stale_stations ?? 0} STALE
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-950 text-red-300 border border-red-800">
+              {liveSource?.counts?.offline_stations ?? (totalStations - activeStations)} OFFLINE
+            </span>
+          </div>
+
+          {/* Latency & Last Update */}
+          <div className="hidden lg:flex items-center gap-3 font-mono text-[11px] border-l border-border-subtle pl-4 text-slate-400">
+            <div>API Latency: <strong className="text-slate-200">{formatLatency(liveSource?.metrics?.mean_request_latency_ms ?? liveSource?.last_request_latency_ms ?? 45.0)}</strong></div>
+            <div>Last Ingestion: <span className="text-slate-300">{liveSource?.metrics?.last_poll_cycle_start ? formatIsoUtc(liveSource.metrics.last_poll_cycle_start, true) : 'Recent'}</span></div>
+          </div>
+        </div>
+
+        {/* Manual Poll Trigger */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => pollMutation.mutate()}
+            disabled={pollMutation.isPending}
+            className="px-2.5 py-1 rounded bg-surface-2 hover:bg-surface-hover border border-border text-[11px] font-mono text-slate-200 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Trigger on-demand live poll cycle"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${pollMutation.isPending ? 'animate-spin text-ops-weather' : 'text-slate-400'}`} />
+            <span>{pollMutation.isPending ? 'Polling...' : 'Poll Now'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Active Outage Episode Banner (Shown only when in degraded / outage state) */}
+      {liveSource?.active_episode && (
+        <div className="p-3 rounded bg-red-950/40 border border-red-800 text-data font-mono text-[11px] text-red-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="w-4 h-4 text-red-400 flex-shrink-0 animate-pulse" />
+            <div>
+              <strong className="text-red-300">ACTIVE OUTAGE EPISODE ({liveSource.active_episode.episode_id})</strong>
+              <span className="text-slate-300 ml-2">
+                Started: {formatIsoUtc(liveSource.active_episode.started_at, true)} · Duration: {Math.round(liveSource.active_episode.duration_seconds)}s
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-slate-300">
+            <div>Affected Stations: <strong className="text-red-300">{liveSource.active_episode.affected_stations.length}</strong></div>
+            <div>Estimated Obs Loss: <strong className="text-amber-300">{liveSource.active_episode.observation_loss_estimate ?? 'Unknown'}</strong></div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Compact Network Operational Status Strip (Prioritizing Active Anomalies & Sensor Health) */}
       <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
         <div className="flex flex-wrap items-center gap-5">
           {/* Active Network Stations */}
@@ -181,18 +284,18 @@ export const NetworkOverviewPage: React.FC = () => {
           {/* Critical / Warning Stations Breakdown */}
           <div className="flex items-center gap-3 font-mono text-[11px] border-l border-border-subtle pl-4">
             <div>
-              <span className="text-slate-400 text-[10px] uppercase block">Degraded / Critical:</span>
+              <span className="text-slate-400 text-[10px] uppercase block">Sensor Degradation:</span>
               <span className="font-semibold text-amber-400">{warningCount} WARN</span>
               <span className="text-slate-500 mx-1">·</span>
               <span className="font-semibold text-red-400">{criticalCount} CRIT</span>
             </div>
           </div>
 
-          {/* Network Health Index */}
+          {/* Network Sensor Health Index */}
           <div className="flex items-center gap-2 border-l border-border-subtle pl-4">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block">Network Health</span>
+              <span className="text-[10px] font-mono text-slate-400 uppercase block">Sensor Health Index</span>
               <span className="text-h2 font-mono font-bold text-emerald-400">
                 {meanHealth}/100
               </span>
@@ -200,14 +303,14 @@ export const NetworkOverviewPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Pipeline Latency & Refresh Cadence (Secondary Metadata) */}
+        {/* Pipeline Latency & Refresh Cadence */}
         <div className="text-right text-[11px] font-mono text-slate-400 hidden md:block">
           <div>Pipeline Latency: <strong className="text-slate-300">{formatLatency(systemHealth?.mean_pipeline_latency_ms ?? 5.8)}</strong></div>
-          <div>Cadence: <span className="text-emerald-400">15s Polling Active</span></div>
+          <div>Cadence: <span className="text-emerald-400">15s Active Polling</span></div>
         </div>
       </div>
 
-      {/* 2. Middle Row: Spatial Map + Active Alert Feed */}
+      {/* 3. Middle Row: Spatial Map + Active Alert Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-2">
           <div className="flex items-center justify-between">
@@ -241,7 +344,7 @@ export const NetworkOverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Bottom Row: High-Density Station Telemetry Table */}
+      {/* 4. Bottom Row: High-Density Station Telemetry Matrix */}
       <div className="space-y-2 pt-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-h2 font-semibold text-slate-100">

@@ -261,3 +261,85 @@ export interface PaginatedResponse<T> {
   items: T[];
   pagination: PaginationMeta;
 }
+
+export type SourceHealthState =
+  | 'HEALTHY'
+  | 'DEGRADED'
+  | 'STALE'
+  | 'DISCONNECTED'
+  | 'RATE_LIMITED'
+  | 'AUTH_ERROR'
+  | 'CONFIG_ERROR';
+
+export type StationLiveStatus = 'LIVE' | 'STALE' | 'OFFLINE';
+
+export interface OutageEpisodeSummary {
+  episode_id: string;
+  started_at: string;
+  resolved_at?: string | null;
+  source: string;
+  affected_stations: string[];
+  initial_state: SourceHealthState;
+  current_state: SourceHealthState;
+  duration_seconds: number;
+  failure_categories: string[];
+  observation_loss_estimate?: number | null;
+  is_ongoing: boolean;
+}
+
+export interface StationLiveRecord {
+  station_id: string;
+  status: StationLiveStatus;
+  last_observation_timestamp?: string | null;
+  last_ingestion_timestamp?: string | null;
+  observation_age_seconds?: number | null;
+  ingestion_latency_seconds?: number | null;
+  consecutive_failures: number;
+  latest_successful_poll_utc?: string | null;
+  latest_error_category: string;
+  latest_error_message?: string | null;
+  is_stale: boolean;
+  duplicate_count: number;
+  rejected_observation_count: number;
+  temperature_c?: number | null;
+  humidity_pct?: number | null;
+  pressure_hpa?: number | null;
+}
+
+export interface LiveSourceHealthSummary {
+  status: SourceHealthState;
+  source_state: SourceHealthState;
+  provider: string;
+  is_polling: boolean;
+  poll_interval_seconds: number;
+  stale_threshold_seconds: number;
+  last_request_latency_ms?: number | null;
+  counts: {
+    total_stations: number;
+    live_stations: number;
+    stale_stations: number;
+    offline_stations: number;
+  };
+  metrics: {
+    requests_total?: number;
+    requests_success?: number;
+    requests_failed?: number;
+    observations_ingested?: number;
+    observations_rejected?: number;
+    stale_observations?: number;
+    duplicate_observations?: number;
+    last_poll_cycle_start?: string | null;
+    last_poll_cycle_duration_ms?: number | null;
+    mean_request_latency_ms?: number;
+  };
+  active_episode?: OutageEpisodeSummary | null;
+  recent_episodes?: OutageEpisodeSummary[];
+  recent_transitions?: Array<{
+    from_state: SourceHealthState;
+    to_state: SourceHealthState;
+    timestamp: string;
+    reason: string;
+    trigger_category: string;
+  }>;
+  station_live_records?: Record<string, StationLiveRecord>;
+}

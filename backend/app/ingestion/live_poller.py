@@ -2,6 +2,8 @@
 
 Orchestrates periodic multi-station observation retrieval, freshness tracking,
 concurrency isolation, and pipeline ingestion into the RealTimeProcessingEngine.
+Integrated with the Phase 11C SourceHealthStateMachine for deterministic operational
+observability, outage episode tracking, and latency diagnostics.
 """
 
 from __future__ import annotations
@@ -18,6 +20,15 @@ from backend.app.core.database import DatabaseRepository
 from backend.app.core.engine import RealTimeProcessingEngine
 from backend.app.core.logging import get_logger
 from backend.app.core.ws_manager import WebSocketConnectionManager, get_ws_manager
+from backend.app.ingestion.source_health import (
+    ErrorCategory,
+    OutageEpisode,
+    SourceHealthState,
+    SourceHealthStateMachine,
+    SourceHealthTransition,
+    StationLiveRecord,
+    StationLiveStatus,
+)
 from backend.app.models.events import EventType, SystemStatusChangedPayload, WebSocketEnvelope
 from backend.app.models.observation import QualityStatus, WeatherObservation
 from ml.spatial.topology import SpatialNetworkTopology, StationNode
@@ -38,6 +49,7 @@ class LiveSourcePoller:
         poll_interval_seconds: Optional[int] = None,
         stale_threshold_seconds: Optional[float] = None,
         max_concurrent_requests: int = 5,
+        state_machine: Optional[SourceHealthStateMachine] = None,
     ) -> None:
         app_settings = get_settings()
         live_cfg = app_settings.live_source
@@ -51,6 +63,21 @@ class LiveSourcePoller:
         self.poll_interval_seconds = poll_interval_seconds or live_cfg.poll_interval_seconds
         self.stale_threshold_seconds = stale_threshold_seconds or live_cfg.stale_threshold_seconds
         self.max_concurrent_requests = max_concurrent_requests
+
+        # Operational State Machine
+        self.state_machine = state_machine or SourceHealthStateMachine(
+            provider=live_cfg.provider or "open_meteo",
+            outage_consecutive_failures=live_cfg.outage_consecutive_failures,
+            recovery_required_successes=live_cfg.recovery_required_successes,
+            stale_threshold_seconds=self.stale_threshold_seconds,
+            expected_cadence_seconds=float(self.poll_interval_seconds),
+            max_history_records=live_cfg.max_history_records,
+            max_outage_episodes=live_cfg.max_outage_episodes,
+        )
+
+        # Pre-seed stations in state machine
+        for s_id in self.topology.stations.keys():
+            self.state_machine.stations.setdefault(s_id, StationLiveRecord(station_id=s_id))
 
         # Concurrency & execution state
         self._is_running = False
@@ -70,7 +97,7 @@ class LiveSourcePoller:
             "last_poll_cycle_duration_ms": None,
         }
 
-        # Per-station freshness state
+        # Per-station freshness state dictionary (for backward compatibility)
         self.station_freshness: Dict[str, Dict[str, Any]] = {}
 
     @property
@@ -130,12 +157,23 @@ class LiveSourcePoller:
             except asyncio.CancelledError:
                 break
 
-    async def poll_station(self, station_id: str, node: StationNode) -> Optional[WeatherObservation]:
-        """Poll a single station with lock protection, error isolation, and metrics recording."""
+    async def poll_station(
+        self, station_id: str, node: StationNode
+    ) -> Dict[str, Any]:
+        """Poll a single station with lock protection, error isolation, and metrics recording.
+        
+        Returns a dictionary summarizing station execution details for state machine evaluation.
+        """
         lock = self._get_station_lock(station_id)
         if lock.locked():
             logger.debug("Skipping station %s: previous poll request still in flight", station_id)
-            return None
+            return {
+                "station_id": station_id,
+                "success": False,
+                "error_category": ErrorCategory.TIMEOUT,
+                "error_message": "Previous poll request still in flight",
+                "observation": None,
+            }
 
         async with lock:
             self.metrics["requests_total"] += 1
@@ -154,10 +192,32 @@ class LiveSourcePoller:
             if obs is None:
                 self.metrics["requests_failed"] += 1
                 self._update_station_freshness(station_id, obs=None)
-                return None
+                err_msg = self.connector.health.last_error_message or "Unknown fetch failure"
+                cat = ErrorCategory.NETWORK_ERROR
+                if "429" in err_msg:
+                    cat = ErrorCategory.HTTP_429
+                elif "401" in err_msg or "403" in err_msg or self.connector.health.authentication_status == "INVALID_CREDENTIALS":
+                    cat = ErrorCategory.HTTP_401
+                elif "timeout" in err_msg.lower():
+                    cat = ErrorCategory.TIMEOUT
+                elif "500" in err_msg or "502" in err_msg or "503" in err_msg:
+                    cat = ErrorCategory.HTTP_5XX
+                elif "malformed" in err_msg.lower():
+                    cat = ErrorCategory.PARSE_ERROR
+                elif "quality gate" in err_msg.lower():
+                    cat = ErrorCategory.SCHEMA_VIOLATION
+
+                return {
+                    "station_id": station_id,
+                    "success": False,
+                    "error_category": cat,
+                    "error_message": err_msg,
+                    "observation": None,
+                    "latency_ms": latency_ms,
+                }
 
             self.metrics["requests_success"] += 1
-            
+
             # Freshness Calculation
             delay_seconds = (obs.ingestion_timestamp - obs.timestamp).total_seconds()
             is_stale = delay_seconds > self.stale_threshold_seconds
@@ -173,19 +233,38 @@ class LiveSourcePoller:
             self._update_station_freshness(station_id, obs=obs, delay_seconds=delay_seconds, is_stale=is_stale)
 
             # Ingest into RealTimeProcessingEngine
+            is_dup = False
+            is_rej = False
             try:
                 result = self.engine.process_observation(obs)
                 if result.status.value == "PROCESSED":
                     self.metrics["observations_ingested"] += 1
                 elif result.status.value == "DUPLICATE_SKIPPED":
                     self.metrics["duplicate_observations"] += 1
+                    is_dup = True
                 else:
                     self.metrics["observations_rejected"] += 1
+                    is_rej = True
             except Exception as eng_err:
                 logger.error("Engine processing error for live observation %s: %s", station_id, str(eng_err))
                 self.metrics["observations_rejected"] += 1
+                is_rej = True
 
-            return obs
+            return {
+                "station_id": station_id,
+                "success": True,
+                "observation": obs,
+                "observation_timestamp": obs.timestamp,
+                "ingestion_timestamp": obs.ingestion_timestamp,
+                "delay_seconds": delay_seconds,
+                "is_stale": is_stale,
+                "is_duplicate": is_dup,
+                "is_rejected": is_rej,
+                "temperature": obs.temperature,
+                "humidity": obs.humidity,
+                "pressure": obs.pressure,
+                "latency_ms": latency_ms,
+            }
 
     def _update_station_freshness(
         self,
@@ -194,7 +273,7 @@ class LiveSourcePoller:
         delay_seconds: Optional[float] = None,
         is_stale: bool = False,
     ) -> None:
-        """Update per-station observability status."""
+        """Update per-station observability status dictionary (backward compatibility)."""
         prev = self.station_freshness.get(station_id, {})
         if obs is not None:
             self.station_freshness[station_id] = {
@@ -224,14 +303,14 @@ class LiveSourcePoller:
             }
 
     async def poll_cycle_once(self) -> List[Optional[WeatherObservation]]:
-        """Execute a single multi-station polling cycle concurrently."""
+        """Execute a single multi-station polling cycle concurrently and evaluate state machine."""
         cycle_start = datetime.now(timezone.utc)
         self.metrics["last_poll_cycle_start"] = cycle_start.isoformat()
         t0 = time.perf_counter()
 
         semaphore = asyncio.Semaphore(self.max_concurrent_requests)
 
-        async def _bounded_poll(s_id: str, node: StationNode) -> Optional[WeatherObservation]:
+        async def _bounded_poll(s_id: str, node: StationNode) -> Dict[str, Any]:
             async with semaphore:
                 return await self.poll_station(s_id, node)
 
@@ -240,39 +319,77 @@ class LiveSourcePoller:
             for station_id, node in self.topology.stations.items()
         ]
 
-        results = await asyncio.gather(*tasks, return_exceptions=False)
+        station_results_list = await asyncio.gather(*tasks, return_exceptions=False)
         duration_ms = (time.perf_counter() - t0) * 1000.0
         self.metrics["last_poll_cycle_duration_ms"] = round(duration_ms, 2)
 
+        # Feed results into State Machine
+        station_results_map: Dict[str, Dict[str, Any]] = {
+            res["station_id"]: res for res in station_results_list
+        }
+
+        # Check for top-level provider error category
+        auth_failed = self.connector.health.authentication_status == "INVALID_CREDENTIALS"
+        rate_limited = self.connector.health.rate_limit_remaining == 0
+
+        if auth_failed:
+            self.state_machine.record_poll_cycle_failure(
+                category=ErrorCategory.HTTP_401,
+                error_message="Authentication credentials rejected",
+                affected_stations=list(station_results_map.keys()),
+                timestamp=cycle_start,
+            )
+        elif rate_limited:
+            self.state_machine.record_poll_cycle_failure(
+                category=ErrorCategory.HTTP_429,
+                error_message="API Rate limit exhausted",
+                affected_stations=list(station_results_map.keys()),
+                timestamp=cycle_start,
+            )
+        else:
+            self.state_machine.record_poll_cycle_success(
+                latency_ms=duration_ms,
+                station_results=station_results_map,
+                timestamp=cycle_start,
+            )
+
+        observations = [
+            res.get("observation") for res in station_results_list
+        ]
+
         logger.info(
-            "Completed live poll cycle across %d stations in %.2fms (success: %d, failed: %d)",
+            "Completed live poll cycle across %d stations in %.2fms (success: %d, failed: %d, source_state: %s)",
             len(tasks),
             duration_ms,
-            sum(1 for r in results if r is not None),
-            sum(1 for r in results if r is None),
+            sum(1 for r in observations if r is not None),
+            sum(1 for r in observations if r is None),
+            self.state_machine.current_state.value,
         )
 
-        return results
+        return observations
 
     def get_status_summary(self) -> Dict[str, Any]:
         """Return comprehensive operational snapshot for API and dashboards."""
         health = self.get_health()
-        overall_status = "LIVE"
-        if not health.is_reachable or health.consecutive_failures >= 3:
-            overall_status = "DISCONNECTED"
-        elif health.consecutive_failures > 0 or health.rate_limit_remaining == 0:
-            overall_status = "DEGRADED"
-        elif any(f.get("is_stale", False) for f in self.station_freshness.values()):
-            overall_status = "STALE"
+        sm_summary = self.state_machine.get_summary()
 
         return {
-            "status": overall_status,
+            "status": sm_summary["source_state"],
+            "source_state": sm_summary["source_state"],
             "provider": health.provider,
             "is_polling": self._is_running,
             "poll_interval_seconds": self.poll_interval_seconds,
             "stale_threshold_seconds": self.stale_threshold_seconds,
             "health": health.model_dump(),
-            "metrics": self.metrics,
+            "metrics": {
+                **self.metrics,
+                **sm_summary["metrics"],
+            },
             "stations_configured": len(self.topology.stations),
             "station_freshness": self.station_freshness,
+            "station_live_records": sm_summary["stations"],
+            "counts": sm_summary["counts"],
+            "active_episode": sm_summary["active_episode"],
+            "recent_episodes": sm_summary["recent_episodes"],
+            "recent_transitions": sm_summary["recent_transitions"],
         }

@@ -2,7 +2,8 @@
 """SkyGuard AI — Live Weather API Smoke Test Utility.
 
 Executes a live or mocked smoke test against Open-Meteo WMO surface feeds,
-validating HTTP transport, response parsing, unit normalization, and qualification gates.
+validating HTTP transport, response parsing, unit normalization, qualification gates,
+and the Source Health State Machine.
 
 Usage:
     python scripts/smoke_test_live_api.py --mock
@@ -11,6 +12,7 @@ Usage:
 """
 
 import argparse
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
@@ -28,6 +30,12 @@ from backend.app.connectors.live_qualification import (
 )
 from backend.app.connectors.weather_api import OpenMeteoLiveConnector
 from backend.app.core.config import get_settings
+from backend.app.ingestion.source_health import (
+    ErrorCategory,
+    SourceHealthState,
+    SourceHealthStateMachine,
+    StationLiveStatus,
+)
 
 
 def run_smoke_test(
@@ -37,7 +45,7 @@ def run_smoke_test(
     lon: float,
     elevation: float,
 ) -> bool:
-    mode_str = "LIVE API TEST (Real Outbound HTTP Request)" if is_live else "MOCK TEST (Deterministic Local Fixture)"
+    mode_str = "LIVE TEST (Real Outbound HTTP Request)" if is_live else "MOCK TEST (Deterministic Local Fixture)"
     
     print("=" * 70)
     print("SKYGUARD AI — LIVE WEATHER SOURCE SMOKE TEST")
@@ -48,6 +56,10 @@ def run_smoke_test(
     print("-" * 70)
 
     settings = get_settings()
+    sm = SourceHealthStateMachine(
+        provider=settings.live_source.provider or "open_meteo",
+        stale_threshold_seconds=settings.live_source.stale_threshold_seconds,
+    )
 
     if is_live:
         connector = OpenMeteoLiveConnector(
@@ -70,11 +82,37 @@ def run_smoke_test(
         if obs is None:
             print("[FAILED] Live API fetch failed or was rejected by Quality Gate.")
             print(f"Health Status     : {connector.health.model_dump_json(indent=2)}")
+            sm.record_poll_cycle_failure(
+                category=ErrorCategory.NETWORK_ERROR,
+                error_message=connector.health.last_error_message or "Network failure",
+                affected_stations=[station_id],
+            )
+            print(f"Source State      : {sm.current_state.value}")
             return False
+
+        # Record success in state machine
+        sm.record_poll_cycle_success(
+            latency_ms=elapsed_ms,
+            station_results={
+                station_id: {
+                    "success": True,
+                    "observation_timestamp": obs.timestamp,
+                    "ingestion_timestamp": obs.ingestion_timestamp,
+                    "temperature": obs.temperature,
+                    "humidity": obs.humidity,
+                    "pressure": obs.pressure,
+                }
+            }
+        )
+
+        obs_age_sec = (datetime.now(timezone.utc) - obs.timestamp).total_seconds()
+        ing_delay_sec = (obs.ingestion_timestamp - obs.timestamp).total_seconds()
 
         print(f"[SUCCESS] Received observation in {elapsed_ms:.2f} ms")
         print(f"Timestamp (UTC)   : {obs.timestamp.isoformat()}")
         print(f"Ingestion (UTC)   : {obs.ingestion_timestamp.isoformat()}")
+        print(f"Observation Age   : {obs_age_sec:.1f} s")
+        print(f"Ingestion Delay   : {ing_delay_sec:.1f} s")
         print(f"Temperature       : {obs.temperature} °C")
         print(f"Relative Humidity : {obs.humidity} %")
         print(f"Sea-Level Pressure: {obs.pressure} hPa (MSLP)")
@@ -82,10 +120,10 @@ def run_smoke_test(
         print(f"Quality Status    : {obs.data_quality_status}")
         print(f"Supplementary     : {obs.metadata.get('source_supplementary', {})}")
         print("-" * 70)
-        print("Live Source Health Summary:")
-        print(f"  Reachable       : {connector.health.is_reachable}")
-        print(f"  Consecutive Fails: {connector.health.consecutive_failures}")
-        print(f"  Latency (ms)    : {connector.health.last_response_latency_ms}")
+        print("Operational Health Summary:")
+        print(f"  Source State    : {sm.current_state.value}")
+        print(f"  Station Status  : {sm.stations[station_id].status.value}")
+        print(f"  API Latency     : {elapsed_ms:.2f} ms")
         print(f"  Auth Status     : {connector.health.authentication_status}")
         return True
 
@@ -115,6 +153,20 @@ def run_smoke_test(
         obs = observations[0]
         gate_res = LiveSourceQualificationGate.evaluate(obs, expected_station_id=station_id)
 
+        sm.record_poll_cycle_success(
+            latency_ms=1.2,
+            station_results={
+                station_id: {
+                    "success": gate_res.is_qualified,
+                    "observation_timestamp": obs.timestamp,
+                    "ingestion_timestamp": obs.ingestion_timestamp,
+                    "temperature": obs.temperature,
+                    "humidity": obs.humidity,
+                    "pressure": obs.pressure,
+                }
+            }
+        )
+
         print("[SUCCESS] Mock Observation Normalized and Verified:")
         print(f"Timestamp (UTC)   : {obs.timestamp.isoformat()}")
         print(f"Temperature       : {obs.temperature} °C")
@@ -122,6 +174,8 @@ def run_smoke_test(
         print(f"Sea-Level Pressure: {obs.pressure} hPa (MSLP)")
         print(f"Station Pressure  : {obs.station_pressure_hpa} hPa (Surface)")
         print(f"Quality Gate      : {'PASSED' if gate_res.is_qualified else 'FAILED'}")
+        print(f"Source State      : {sm.current_state.value}")
+        print(f"Station Status    : {sm.stations[station_id].status.value}")
         if not gate_res.is_qualified:
             print(f"Gate Reasons      : {gate_res.reasons}")
         return gate_res.is_qualified
