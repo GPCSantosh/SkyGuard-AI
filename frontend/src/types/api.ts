@@ -242,8 +242,29 @@ export interface SystemHealthStatus {
   checked_at: string;
 }
 
+export interface ReplayScenarioEvent {
+  step: number;
+  timestamp: string;
+  station_id: string;
+  anomaly_type: string;
+  expected_decision: string;
+  explanation: string;
+}
+
+export interface ReplayScenario {
+  id: string;
+  name: string;
+  description: string;
+  total_steps?: number;
+  total_observations?: number;
+  key_events?: ReplayScenarioEvent[];
+}
+
 export interface ReplayStatus {
+  mode?: string;
   is_running: boolean;
+  current_scenario_id?: string;
+  current_index?: number;
   total_queued_observations: number;
   emitted_count: number;
   speed_multiplier: number;

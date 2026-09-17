@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchSystemHealth,
   fetchReplayStatus,
+  fetchReplayScenarios,
+  loadReplayScenario,
+  resetReplaySimulation,
   stepReplaySimulation,
   fetchLiveSourceHealth,
   triggerLivePoll,
@@ -19,7 +22,42 @@ export function useReplayStatus() {
   return useQuery({
     queryKey: ['replay', 'status'],
     queryFn: fetchReplayStatus,
-    refetchInterval: 3000,
+    refetchInterval: 2000,
+  });
+}
+
+export function useReplayScenarios() {
+  return useQuery({
+    queryKey: ['replay', 'scenarios'],
+    queryFn: fetchReplayScenarios,
+    staleTime: 60000,
+  });
+}
+
+export function useLoadScenario() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (scenarioId: string) => loadReplayScenario(scenarioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['replay'] });
+      queryClient.invalidateQueries({ queryKey: ['stations'] });
+      queryClient.invalidateQueries({ queryKey: ['anomalies'] });
+      queryClient.invalidateQueries({ queryKey: ['corrections'] });
+    },
+  });
+}
+
+export function useResetReplay() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: resetReplaySimulation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['replay'] });
+      queryClient.invalidateQueries({ queryKey: ['stations'] });
+      queryClient.invalidateQueries({ queryKey: ['anomalies'] });
+      queryClient.invalidateQueries({ queryKey: ['corrections'] });
+      queryClient.invalidateQueries({ queryKey: ['system'] });
+    },
   });
 }
 

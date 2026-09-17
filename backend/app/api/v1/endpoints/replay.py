@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from backend.app.api.v1.deps import get_engine, get_replay_engine
 from backend.app.core.engine import RealTimeProcessingEngine
@@ -12,17 +13,52 @@ from backend.app.core.replay import StreamReplayEngine
 router = APIRouter(prefix="/replay", tags=["Replay Simulator"])
 
 
+class LoadScenarioRequest(BaseModel):
+    scenario_id: str
+
+
 @router.get("/status")
 async def get_replay_status(
     replay: StreamReplayEngine = Depends(get_replay_engine),
 ) -> Dict[str, Any]:
     """Get current status of the stream replay simulator."""
     return {
+        "mode": "DEMO REPLAY",
         "is_running": replay.is_running,
+        "current_scenario_id": replay.current_scenario_id,
+        "current_index": replay.current_index,
         "total_queued_observations": len(replay.observations),
         "emitted_count": replay.emitted_count,
         "speed_multiplier": replay.speed_multiplier,
         "registered_injected_anomalies_count": len(replay.injected_anomalies),
+    }
+
+
+@router.get("/scenarios")
+async def list_replay_scenarios(
+    replay: StreamReplayEngine = Depends(get_replay_engine),
+) -> List[Dict[str, Any]]:
+    """List all available frozen demonstration scenarios."""
+    return replay.get_available_scenarios()
+
+
+@router.post("/load-scenario")
+async def load_replay_scenario(
+    payload: LoadScenarioRequest,
+    replay: StreamReplayEngine = Depends(get_replay_engine),
+) -> Dict[str, Any]:
+    """Load a specific demonstration scenario from the registry."""
+    success = replay.load_scenario(payload.scenario_id)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Scenario '{payload.scenario_id}' could not be loaded.",
+        )
+    return {
+        "status": "success",
+        "loaded_scenario_id": payload.scenario_id,
+        "total_observations": len(replay.observations),
+        "current_index": replay.current_index,
     }
 
 
@@ -34,11 +70,16 @@ async def step_replay_simulation(
 ) -> Dict[str, Any]:
     """Step the replay simulation forward by N observations."""
     if not replay.observations:
-        raise HTTPException(status_code=400, detail="No historical observations loaded in replay engine.")
+        raise HTTPException(
+            status_code=400,
+            detail="No historical observations loaded in replay engine.",
+        )
 
-    results = replay.run_synchronous_simulation(engine=engine, max_steps=count)
+    results = replay.step(engine=engine, count=count)
     return {
+        "mode": "DEMO REPLAY",
         "steps_executed": len(results),
+        "current_index": replay.current_index,
         "total_emitted": replay.emitted_count,
         "results_summary": [
             {
@@ -51,3 +92,11 @@ async def step_replay_simulation(
             for r in results
         ],
     }
+
+
+@router.post("/reset")
+async def reset_replay_simulation(
+    replay: StreamReplayEngine = Depends(get_replay_engine),
+) -> Dict[str, Any]:
+    """Reset transient demo simulation state without destructive database operations."""
+    return replay.reset(preserve_db=True)

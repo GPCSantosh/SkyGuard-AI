@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-09-17T07:34:06.933679+00:00",
+  "random_seed": 42,
+  "scenarios": [
+    {
+      "id": "flagship_narrative",
+      "name": "Flagship 8-12 Min End-to-End Presentation Narrative",
+      "description": "Complete presentation story demonstrating nominal network state, isolated sensor spike, TreeSHAP explainability, health degradation, non-destructive imputation, regional storm protection, and source outage decoupling.",
+      "dataset_file": "narrative_replay_dataset.csv",
+      "total_steps": 48,
+      "total_observations": 384,
+      "key_events": [
+        {
+          "step": 8,
+          "timestamp": "2026-09-17T12:40:00+00:00",
+          "station_id": "42182099999",
+          "anomaly_type": "ISOLATED_SENSOR_SPIKE",
+          "expected_decision": "PROBABLE_SENSOR_ANOMALY",
+          "explanation": "Isolated +18.5\u00b0C temperature spike contradicted by stable surrounding stations (Jodhpur, Nagpur)."
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-09-17T13:20:00+00:00",
+          "station_id": "43003099999",
+          "anomaly_type": "FROZEN_SENSOR_FLATLINE",
+          "expected_decision": "PROBABLE_SENSOR_ANOMALY",
+          "explanation": "Stuck sensor flatline with zero variance during dynamic marine morning cycle."
+        },
+        {
+          "step": 28,
+          "timestamp": "2026-09-17T14:20:00+00:00",
+          "station_id": "NETWORK_REGIONAL",
+          "anomaly_type": "REGIONAL_METEOROLOGICAL_SQUALL",
+          "expected_decision": "POSSIBLE_GENUINE_EVENT",
+          "explanation": "Coherent regional squall front with 85% spatial consensus; protected from false sensor fault classification."
+        }
+      ]
+    },
+    {
+      "id": "sensor_spike_demo",
+      "name": "Isolated Hardware Spike & Flatline",
+      "description": "Targeted demonstration of high-amplitude temperature spike and flatline on Safdarjung & Santacruz.",
+      "dataset_file": "narrative_replay_dataset.csv",
+      "step_range": [
+        0,
+        20
+      ]
+    },
+    {
+      "id": "regional_event_demo",
+      "name": "Regional Squall Front (Genuine Event Shield)",
+      "description": "Multi-station coherent weather event demonstrating 85% spatial consensus and zero sensor health penalty.",
+      "dataset_file": "narrative_replay_dataset.csv",
+      "step_range": [
+        25,
+        40
+      ]
+    },
+    {
+      "id": "source_outage_demo",
+      "name": "Live Source Outage & Decoupling",
+      "description": "Simulated upstream network outage demonstrating state machine transitions without degrading station sensor health.",
+      "dataset_file": "narrative_replay_dataset.csv",
+      "step_range": [
+        0,
+        15
+      ]
+    }
+  ]
+}

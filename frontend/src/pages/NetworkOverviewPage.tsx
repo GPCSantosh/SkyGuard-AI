@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 import { useStations } from '../hooks/useStations';
 import { useAnomalies } from '../hooks/useAnomalies';
-import { useSystemHealth, useLiveSourceHealth, useTriggerLivePoll } from '../hooks/useSystem';
+import {
+  useSystemHealth,
+  useLiveSourceHealth,
+  useTriggerLivePoll,
+  useReplayStatus,
+  useReplayScenarios,
+  useLoadScenario,
+  useStepReplay,
+  useResetReplay,
+} from '../hooks/useSystem';
 import { NetworkMap } from '../components/NetworkMap';
 import { AlertList } from '../components/AlertList';
 import { MetricTable, ColumnDef } from '../components/MetricTable';
@@ -24,6 +33,10 @@ import {
   Globe,
   RefreshCw,
   AlertOctagon,
+  Play,
+  RotateCcw,
+  FastForward,
+  Sparkles,
 } from 'lucide-react';
 
 export const NetworkOverviewPage: React.FC = () => {
@@ -32,8 +45,16 @@ export const NetworkOverviewPage: React.FC = () => {
   const { data: anomalyData, isLoading: isLoadingAnomalies } = useAnomalies({ limit: 10 });
   const { data: systemHealth } = useSystemHealth();
   const { data: liveSource } = useLiveSourceHealth();
+  const { data: replayStatus } = useReplayStatus();
+  const { data: scenarios = [] } = useReplayScenarios();
+  
   const pollMutation = useTriggerLivePoll();
+  const stepMutation = useStepReplay();
+  const loadScenarioMutation = useLoadScenario();
+  const resetMutation = useResetReplay();
+
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('flagship_narrative');
 
   const activeAnomalies = anomalyData?.items || [];
   const totalStations = stations.length;
@@ -69,6 +90,9 @@ export const NetworkOverviewPage: React.FC = () => {
       (s.state && s.state.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const isLiveDisconnected = liveSource?.status === 'AUTH_ERROR' || liveSource?.status === 'CONFIG_ERROR' || liveSource?.status === 'RATE_LIMITED';
+  const isDemoActive = (replayStatus?.emitted_count ?? 0) > 0 || replayStatus?.is_running;
+
   // Source state badge color helper
   const getSourceBadge = (state?: string) => {
     switch (state) {
@@ -90,6 +114,12 @@ export const NetworkOverviewPage: React.FC = () => {
   };
 
   const sourceBadge = getSourceBadge(liveSource?.source_state || liveSource?.status);
+
+  const handleScenarioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const sId = e.target.value;
+    setSelectedScenarioId(sId);
+    loadScenarioMutation.mutate(sId);
+  };
 
   const columns: ColumnDef<StationItem>[] = [
     {
@@ -185,7 +215,99 @@ export const NetworkOverviewPage: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1. Dedicated Live Source & Upstream Ingestion Operations Bar (Phase 11C) */}
+      {/* Live Fallback Warning Banner (If Live API is Unavailable) */}
+      {isLiveDisconnected && (
+        <div className="p-3 rounded bg-red-950/60 border border-red-800 flex flex-wrap items-center justify-between gap-3 text-red-200">
+          <div className="flex items-center gap-2 text-xs">
+            <AlertOctagon className="w-5 h-5 text-red-400 flex-shrink-0 animate-pulse" />
+            <div>
+              <strong className="font-mono text-red-300">LIVE SOURCE UNAVAILABLE</strong>
+              <p className="text-slate-300 text-[11px]">
+                Cannot connect to live weather telemetry upstream. Switch to deterministic Demo Replay Mode to execute standard evaluation narratives.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => stepMutation.mutate(8)}
+            disabled={stepMutation.isPending}
+            className="px-3 py-1 bg-indigo-900/80 hover:bg-indigo-800 text-indigo-200 text-xs font-mono font-semibold rounded border border-indigo-700 transition-colors"
+          >
+            Switch to Demo Replay Mode
+          </button>
+        </div>
+      )}
+
+      {/* 1. Deterministic Demo & Replay Operations Controller */}
+      <div className="p-3 rounded border border-indigo-900/60 bg-gradient-to-r from-surface-1 via-indigo-950/20 to-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <span className="font-mono font-bold text-slate-200 text-xs uppercase tracking-wider">
+              Demo Controller:
+            </span>
+          </div>
+
+          {/* Scenario Selector */}
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedScenarioId}
+              onChange={handleScenarioChange}
+              className="bg-surface-2 border border-border text-slate-200 text-xs font-mono rounded px-2.5 py-1 focus:outline-none focus:border-indigo-500"
+            >
+              {scenarios.map((sc) => (
+                <option key={sc.id} value={sc.id}>
+                  {sc.name}
+                </option>
+              ))}
+              {scenarios.length === 0 && (
+                <option value="flagship_narrative">Flagship 8-12 Min Presentation</option>
+              )}
+            </select>
+          </div>
+
+          {/* Replay State Metrics */}
+          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400 border-l border-border-subtle pl-3">
+            <span>Progress: <strong className="text-indigo-300">{replayStatus?.current_index ?? 0}</strong> / {replayStatus?.total_queued_observations ?? 384}</span>
+            <span className="text-slate-600">|</span>
+            <span>Emitted: <strong className="text-slate-200">{replayStatus?.emitted_count ?? 0}</strong></span>
+          </div>
+        </div>
+
+        {/* Demo Action Buttons */}
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <button
+            onClick={() => stepMutation.mutate(1)}
+            disabled={stepMutation.isPending}
+            className="px-2.5 py-1 rounded bg-surface-2 hover:bg-surface-hover border border-border text-slate-200 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Step simulation forward by 1 station observation"
+          >
+            <Play className="w-3 h-3 text-indigo-400" />
+            <span>Step 1 AWS</span>
+          </button>
+
+          <button
+            onClick={() => stepMutation.mutate(8)}
+            disabled={stepMutation.isPending}
+            className="px-2.5 py-1 rounded bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 font-semibold"
+            title="Step simulation forward by 1 network cycle (all 8 stations)"
+          >
+            <FastForward className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Step Cycle (8 AWS)</span>
+          </button>
+
+          <button
+            onClick={() => resetMutation.mutate()}
+            disabled={resetMutation.isPending}
+            className="px-2.5 py-1 rounded bg-surface-2 hover:bg-red-950/40 border border-border hover:border-red-800 text-slate-300 hover:text-red-300 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Safely reset replay pointer to initial step without mutating production database"
+          >
+            <RotateCcw className="w-3 h-3 text-slate-400" />
+            <span>Reset Demo</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Live Source & Upstream Ingestion Operations Bar */}
       <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
         <div className="flex flex-wrap items-center gap-4">
           {/* Upstream Source Badge */}
@@ -202,7 +324,7 @@ export const NetworkOverviewPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Station Freshness Layer Breakdown (Explicitly separated from Sensor Health) */}
+          {/* Station Freshness Layer Breakdown */}
           <div className="flex items-center gap-2 font-mono text-[11px] border-l border-border-subtle pl-4">
             <span className="text-slate-400 text-[10px] uppercase">Telemetry Ingestion:</span>
             <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">
@@ -237,26 +359,7 @@ export const NetworkOverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Active Outage Episode Banner (Shown only when in degraded / outage state) */}
-      {liveSource?.active_episode && (
-        <div className="p-3 rounded bg-red-950/40 border border-red-800 text-data font-mono text-[11px] text-red-200 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <AlertOctagon className="w-4 h-4 text-red-400 flex-shrink-0 animate-pulse" />
-            <div>
-              <strong className="text-red-300">ACTIVE OUTAGE EPISODE ({liveSource.active_episode.episode_id})</strong>
-              <span className="text-slate-300 ml-2">
-                Started: {formatIsoUtc(liveSource.active_episode.started_at, true)} · Duration: {Math.round(liveSource.active_episode.duration_seconds)}s
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-slate-300">
-            <div>Affected Stations: <strong className="text-red-300">{liveSource.active_episode.affected_stations.length}</strong></div>
-            <div>Estimated Obs Loss: <strong className="text-amber-300">{liveSource.active_episode.observation_loss_estimate ?? 'Unknown'}</strong></div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Compact Network Operational Status Strip (Prioritizing Active Anomalies & Sensor Health) */}
+      {/* 3. Compact Network Operational Status Strip */}
       <div className="p-3 rounded border border-border bg-surface-1 flex flex-wrap items-center justify-between gap-3 text-data">
         <div className="flex flex-wrap items-center gap-5">
           {/* Active Network Stations */}
@@ -306,11 +409,11 @@ export const NetworkOverviewPage: React.FC = () => {
         {/* Pipeline Latency & Refresh Cadence */}
         <div className="text-right text-[11px] font-mono text-slate-400 hidden md:block">
           <div>Pipeline Latency: <strong className="text-slate-300">{formatLatency(systemHealth?.mean_pipeline_latency_ms ?? 5.8)}</strong></div>
-          <div>Cadence: <span className="text-emerald-400">15s Active Polling</span></div>
+          <div>Operating Mode: <span className="text-indigo-400">{isDemoActive ? 'Demo Replay' : 'Live Mode'}</span></div>
         </div>
       </div>
 
-      {/* 3. Middle Row: Spatial Map + Active Alert Feed */}
+      {/* 4. Middle Row: Spatial Map + Active Alert Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-2">
           <div className="flex items-center justify-between">
@@ -344,7 +447,7 @@ export const NetworkOverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Bottom Row: High-Density Station Telemetry Matrix */}
+      {/* 5. Bottom Row: High-Density Station Telemetry Matrix */}
       <div className="space-y-2 pt-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-h2 font-semibold text-slate-100">

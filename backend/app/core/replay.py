@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+import json
 import math
+from pathlib import Path
 import time
-from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tuple, Union
 import pandas as pd
 from pydantic import BaseModel
 
+from backend.app.core.config import get_project_root
 from backend.app.core.engine import RealTimeProcessingEngine
 from backend.app.models.observation import ObservationSource, QualityStatus, WeatherObservation
 from backend.app.models.processing import ProcessingResult
@@ -25,7 +28,7 @@ class SyntheticGroundTruth(BaseModel):
 
 
 class StreamReplayEngine:
-    """Simulates real-time telemetry streaming from historical datasets with optional fault injection."""
+    """Simulates real-time telemetry streaming from historical or frozen demo datasets with optional fault injection."""
 
     def __init__(
         self,
@@ -40,10 +43,32 @@ class StreamReplayEngine:
         self.is_running = False
         self.emitted_count = 0
         self.current_index = 0
+        self.current_scenario_id: str = "flagship_narrative"
         self.injected_anomalies: Dict[str, Dict[str, Any]] = {}  # key: station_id::timestamp
+        self._playback_task: Optional[asyncio.Task] = None
 
         if self.interleaved_chronological and self.observations:
             self.observations.sort(key=lambda o: o.timestamp)
+
+    def get_available_scenarios(self) -> List[Dict[str, Any]]:
+        """Return list of available frozen demo scenarios from registry."""
+        registry_path = get_project_root() / "demo" / "replay" / "scenario_registry.json"
+        if registry_path.exists():
+            try:
+                with open(registry_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    return data.get("scenarios", [])
+            except Exception:
+                pass
+        return [
+            {
+                "id": "flagship_narrative",
+                "name": "Flagship Demo Narrative",
+                "description": "Standard 8-12 min demo replay sequence.",
+                "total_steps": 48,
+                "total_observations": len(self.observations),
+            }
+        ]
 
     def load_from_dataframe(
         self,
@@ -75,6 +100,37 @@ class StreamReplayEngine:
 
         self.current_index = 0
         self.emitted_count = 0
+
+    def load_scenario(self, scenario_id: str) -> bool:
+        """Load specific demo scenario by ID from demo/replay folder."""
+        replay_dir = get_project_root() / "demo" / "replay"
+        csv_path = replay_dir / "narrative_replay_dataset.csv"
+        
+        if not csv_path.exists():
+            return False
+
+        try:
+            df = pd.read_csv(csv_path)
+            self.load_from_dataframe(df)
+            self.current_scenario_id = scenario_id
+            self.current_index = 0
+            self.emitted_count = 0
+            return True
+        except Exception:
+            return False
+
+    def reset(self, preserve_db: bool = True) -> Dict[str, Any]:
+        """Safely reset transient replay simulation pointers without mutating production database."""
+        self.is_running = False
+        self.current_index = 0
+        self.emitted_count = 0
+        return {
+            "status": "reset_successful",
+            "current_index": 0,
+            "emitted_count": 0,
+            "current_scenario_id": self.current_scenario_id,
+            "database_preserved": preserve_db,
+        }
 
     def register_injected_anomaly(
         self,
@@ -126,6 +182,41 @@ class StreamReplayEngine:
 
             self.emitted_count += 1
             yield obs, ground_truth
+
+    def step(
+        self,
+        engine: RealTimeProcessingEngine,
+        count: int = 1,
+    ) -> List[ProcessingResult]:
+        """Step the replay simulation forward by N observations and process through engine."""
+        results: List[ProcessingResult] = []
+        if not self.observations:
+            return results
+
+        for _ in range(count):
+            if self.current_index >= len(self.observations):
+                # Loop back or stop
+                break
+            
+            obs = self.observations[self.current_index]
+            t_str = obs.timestamp.astimezone(timezone.utc).isoformat()
+            key = f"{obs.station_id}::{t_str}"
+
+            if key in self.injected_anomalies:
+                injection = self.injected_anomalies[key]
+                corrupt_dict = injection["corrupted_values"]
+                obs_dict = obs.model_dump()
+                for k, v in corrupt_dict.items():
+                    if k in obs_dict:
+                        obs_dict[k] = v
+                obs = WeatherObservation(**obs_dict)
+
+            res = engine.process_observation(obs)
+            results.append(res)
+            self.current_index += 1
+            self.emitted_count += 1
+
+        return results
 
     def run_synchronous_simulation(
         self,
