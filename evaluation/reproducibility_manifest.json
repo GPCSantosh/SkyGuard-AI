@@ -1,0 +1,28 @@
+{
+  "manifest_version": "1.0.0",
+  "created_at": "2026-09-17T07:24:38.580700+00:00",
+  "random_seed": 42,
+  "environment": {
+    "python_version": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "numpy_version": "2.5.3",
+    "pandas_version": "3.0.5"
+  },
+  "data_hashes": {
+    "benchmark_multistation_2024.csv": "2916bd210bc1aefc09db29b7a631173efd76f65c9f7e742e8a0e23d823f33164",
+    "stations.yaml": "cae793886bb7b8510e72ed3823c08b6f8db35b29210b1364aaaac410f144e0c4",
+    "thresholds.yaml": "09312ad1b96127874f81c78396743d2b9f20930ed9226ef16753614fc1d29cdc",
+    "hybrid_decision.yaml": "9b540ef800aa64d18679c8966f67c39ef200a656691a385991d295740a2719ad",
+    "correction.yaml": "ec0ac9e0cf6515f7e0c3390047295379ef0f2f57ea5c3a23beeea498b0ba9fe1",
+    "sensor_health.yaml": "3e5c4d105c742c9826dcaa92579e23a80b972b874a596c437b36f7d08701c982"
+  },
+  "model_registry": {
+    "isolation_forest_s42_metadata.json": "cebe6f415a43d735ea0aca1a9d5f5efb335242b89e055ed29f9ff8fc0edf6b75",
+    "isolation_forest_s42_weights.joblib": "fd2994eebe2278bf28b43b896d289d13c6ac43fb1d93b883d22a6c48c2ed63a5"
+  },
+  "reproduction_commands": [
+    "python scripts/run_final_evaluation.py --seed 42",
+    "pytest tests/unit tests/integration tests/performance",
+    "cd frontend && npm.cmd run build"
+  ]
+}
