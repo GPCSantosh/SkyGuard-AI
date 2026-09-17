@@ -56,50 +56,72 @@ export const EvidenceAuditModal: React.FC<EvidenceAuditModalProps> = ({ isOpen, 
                 <thead className="bg-surface-2 text-slate-400 border-b border-border text-[10px] uppercase">
                   <tr>
                     <th className="p-2">Claim / Metric</th>
-                    <th className="p-2">Result</th>
-                    <th className="p-2">Evidence Source</th>
+                    <th className="p-2">Value</th>
+                    <th className="p-2">Evidence Type</th>
+                    <th className="p-2">Authoritative Source</th>
                     <th className="p-2">Scope / Limitation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-subtle bg-surface-1">
                   <tr>
-                    <td className="p-2 text-slate-200 font-semibold">Hybrid F1 Benchmark</td>
+                    <td className="p-2 text-slate-200 font-semibold">Hybrid Pipeline F1 (Observation)</td>
                     <td className="p-2 text-emerald-400 font-bold">0.963</td>
-                    <td className="p-2 text-slate-300">docs/FINAL_EVALUATION_REPORT.md</td>
-                    <td className="p-2 text-slate-400">Synthetic & Scenario Benchmark</td>
+                    <td className="p-2 text-slate-400 text-[10px]">BENCHMARK</td>
+                    <td className="p-2 text-slate-300 text-[10px]">FINAL_EVALUATION_REPORT.md §8 (Table 8 Aggregate)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Synthetic + scenario dataset; 8 Indian AWS stations</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-slate-200 font-semibold">Sensor Anomaly Precision</td>
-                    <td className="p-2 text-emerald-400 font-bold">0.978</td>
-                    <td className="p-2 text-slate-300">evaluation/final_results.json</td>
-                    <td className="p-2 text-slate-400">Extreme Value & Spike Injections</td>
+                    <td className="p-2 text-slate-200 font-semibold">Network-Aggregate Precision</td>
+                    <td className="p-2 text-emerald-400 font-bold">0.952</td>
+                    <td className="p-2 text-slate-400 text-[10px]">BENCHMARK</td>
+                    <td className="p-2 text-slate-300 text-[10px]">FINAL_EVALUATION_REPORT.md §8 (Table 8 Aggregate)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Synthetic + scenario dataset; all anomaly classes</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-slate-200 font-semibold">Genuine Event Recall</td>
-                    <td className="p-2 text-emerald-400 font-bold">0.949</td>
-                    <td className="p-2 text-slate-300">evaluation/final_results.json</td>
-                    <td className="p-2 text-slate-400">Coherent Regional Squalls</td>
+                    <td className="p-2 text-slate-200 font-semibold">Network-Aggregate Recall</td>
+                    <td className="p-2 text-emerald-400 font-bold">0.974</td>
+                    <td className="p-2 text-slate-400 text-[10px]">BENCHMARK</td>
+                    <td className="p-2 text-slate-300 text-[10px]">FINAL_EVALUATION_REPORT.md §8 (Table 8 Aggregate)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Synthetic + scenario dataset; all anomaly classes</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-slate-200 font-semibold">Real Open-Meteo Ingestion</td>
-                    <td className="p-2 text-emerald-400 font-bold">100% Passed</td>
-                    <td className="p-2 text-slate-300">docs/LIVE_VALIDATION_REPORT.md</td>
-                    <td className="p-2 text-slate-400">Controlled Live Polling Cycles</td>
+                    <td className="p-2 text-slate-200 font-semibold">Regional Event Protection Rate</td>
+                    <td className="p-2 text-emerald-400 font-bold">100%</td>
+                    <td className="p-2 text-slate-400 text-[10px]">BENCHMARK</td>
+                    <td className="p-2 text-slate-300 text-[10px]">final_results.json → hybrid_decision_engine.summary</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Scenario-based; regional squalls and heatwaves only</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 text-slate-200 font-semibold">Clean-Period False Positive Rate</td>
+                    <td className="p-2 text-emerald-400 font-bold">0.00%</td>
+                    <td className="p-2 text-slate-400 text-[10px]">BENCHMARK</td>
+                    <td className="p-2 text-slate-300 text-[10px]">FINAL_EVALUATION_REPORT.md §5 (Baselines Table)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Clean nominal weather test partition; 8 stations</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 text-slate-200 font-semibold">Live Open-Meteo Ingestion</td>
+                    <td className="p-2 text-emerald-400 font-bold">100% Pass</td>
+                    <td className="p-2 text-slate-400 text-[10px]">LIVE VALIDATION</td>
+                    <td className="p-2 text-slate-300 text-[10px]">docs/LIVE_VALIDATION_REPORT.md</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Controlled live polling cycles; not direct IMD AWS</td>
                   </tr>
                   <tr>
                     <td className="p-2 text-slate-200 font-semibold">Automated Test Suite</td>
                     <td className="p-2 text-emerald-400 font-bold">339 Passed</td>
-                    <td className="p-2 text-slate-300">pytest tests/unit tests/integration</td>
-                    <td className="p-2 text-slate-400">Repository CI/CD Test Env</td>
+                    <td className="p-2 text-slate-400 text-[10px]">ENGINEERING TEST</td>
+                    <td className="p-2 text-slate-300 text-[10px]">pytest tests/ (unit + integration + performance)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Local CI environment; 337 unit+integration, 2 performance</td>
                   </tr>
                   <tr>
                     <td className="p-2 text-slate-200 font-semibold">Pipeline P95 Latency</td>
                     <td className="p-2 text-emerald-400 font-bold">3.42 ms</td>
-                    <td className="p-2 text-slate-300">Benchmark Latency Profiler</td>
-                    <td className="p-2 text-slate-400">Single-node Local Execution</td>
+                    <td className="p-2 text-slate-400 text-[10px]">LOCAL PERFORMANCE</td>
+                    <td className="p-2 text-slate-300 text-[10px]">FINAL_EVALUATION_REPORT.md §17 (Pipeline Profiler)</td>
+                    <td className="p-2 text-slate-400 text-[10px]">Single-node local execution; not deployed cloud infra</td>
                   </tr>
                 </tbody>
               </table>
+
             </div>
           </div>
 

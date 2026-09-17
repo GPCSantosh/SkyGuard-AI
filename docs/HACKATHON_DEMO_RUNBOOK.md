@@ -113,12 +113,15 @@ If the conference venue experiences Wi-Fi loss or upstream rate limits:
 
 | Claim | Result | Evidence Type | Authoritative Source | Scope & Limitations |
 | :--- | :--- | :--- | :--- | :--- |
-| **Hybrid Benchmark F1** | **0.963** | Scientific Benchmark | `evaluation/final_results.json` | Synthetic & scenario benchmark dataset |
-| **Sensor Anomaly Precision** | **0.978** | Scientific Benchmark | `docs/FINAL_EVALUATION_REPORT.md` | Extreme spikes & step jumps |
-| **Regional Event Recall** | **0.949** | Scientific Benchmark | `docs/FINAL_EVALUATION_REPORT.md` | Coherent multi-station squalls |
-| **Live API Processing** | **100% Pass** | Live Validation | `docs/LIVE_VALIDATION_REPORT.md` | Controlled live Open-Meteo cycles |
-| **Automated Test Suite** | **339 Passing** | Engineering Verification | `pytest tests/unit tests/integration` | Repository CI/CD environment |
-| **Pipeline Latency (P95)** | **3.42 ms** | Performance Benchmark | `evaluation/final_results.json` | Single-node local execution |
+| **Hybrid Benchmark F1** | **0.963** | BENCHMARK | `FINAL_EVALUATION_REPORT.md` §8 (Table 8 Aggregate) | Synthetic & scenario dataset; 8 Indian AWS stations |
+| **Network-Aggregate Precision** | **0.952** | BENCHMARK | `FINAL_EVALUATION_REPORT.md` §8 (Table 8 Aggregate) | Synthetic & scenario dataset; all anomaly classes |
+| **Network-Aggregate Recall** | **0.974** | BENCHMARK | `FINAL_EVALUATION_REPORT.md` §8 (Table 8 Aggregate) | Synthetic & scenario dataset; all anomaly classes |
+| **Regional Event Protection Rate** | **100%** | BENCHMARK | `final_results.json` → `hybrid_decision_engine.summary` | Scenario-based; squalls and heatwaves only |
+| **Clean-Period FPR (Hybrid)** | **0.00%** | BENCHMARK | `FINAL_EVALUATION_REPORT.md` §5 (Baselines Table) | Clean nominal weather test partition |
+| **Live API Processing** | **100% Pass** | LIVE VALIDATION | `docs/LIVE_VALIDATION_REPORT.md` | Controlled live Open-Meteo cycles; not direct IMD AWS |
+| **Automated Test Suite** | **339 Passing** | ENGINEERING TEST | `pytest tests/` (unit + integration + performance) | Local CI environment; 337 unit+integration, 2 performance |
+| **Pipeline Latency (P95)** | **3.42 ms** | LOCAL PERFORMANCE | `FINAL_EVALUATION_REPORT.md` §17 (Pipeline Profiler) | Single-node local execution; not deployed cloud infra |
+
 
 ---
 

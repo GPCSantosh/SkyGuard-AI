@@ -183,6 +183,31 @@ class StreamReplayEngine:
             self.emitted_count += 1
             yield obs, ground_truth
 
+    def reset(self, preserve_db: bool = True) -> dict:
+        """Reset transient demo simulation pointer state.
+
+        Only resets in-memory replay pointers. Does not delete any database records,
+        does not alter frozen evaluation artifacts, does not modify production observation history.
+
+        Args:
+            preserve_db: Ignored — database is always preserved. Present for API clarity.
+
+        Returns:
+            Status dict confirming reset.
+        """
+        self.current_index = 0
+        self.emitted_count = 0
+        self.is_running = False
+        return {
+            "status": "RESET",
+            "current_index": self.current_index,
+            "emitted_count": self.emitted_count,
+            "total_observations": len(self.observations),
+            "current_scenario_id": self.current_scenario_id,
+            "database_preserved": True,
+            "evaluation_artifacts_unchanged": True,
+        }
+
     def step(
         self,
         engine: RealTimeProcessingEngine,
