@@ -14,6 +14,16 @@ import pandas as pd
 
 from backend.app.core.database import DatabaseRepository
 from backend.app.core.state import StationStateManager
+from backend.app.core.ws_manager import WebSocketConnectionManager, get_ws_manager
+from backend.app.models.events import (
+    AnomalyCreatedPayload,
+    CorrectionCreatedPayload,
+    EventType,
+    HealthUpdatedPayload,
+    ObservationUpdatedPayload,
+    StationStatusChangedPayload,
+    WebSocketEnvelope,
+)
 from backend.app.models.observation import WeatherObservation
 from backend.app.models.processing import (
     AnomalyEventRecord,
@@ -66,6 +76,7 @@ class RealTimeProcessingEngine:
         correction_engine: Optional[CorrectionRecommendationEngine] = None,
         ml_model: Optional[IsolationForestDetector] = None,
         models_dir: Union[str, Path] = "models/registry",
+        ws_manager: Optional[WebSocketConnectionManager] = None,
     ) -> None:
         self.repository = repository or DatabaseRepository()
         self.state_manager = state_manager or StationStateManager()
@@ -74,6 +85,7 @@ class RealTimeProcessingEngine:
         self.explainability_engine = ExplainabilityEngine(model=ml_model)
         self.health_engine = health_engine or SensorHealthEngine()
         self.correction_engine = correction_engine or CorrectionRecommendationEngine(spatial_engine=self.spatial_engine)
+        self.ws_manager = ws_manager or get_ws_manager()
         
         self.models_dir = Path(models_dir)
         self.ml_model = ml_model
@@ -405,6 +417,107 @@ class RealTimeProcessingEngine:
         t_persist_end = time.perf_counter_ns()
         total_pipeline_ms = (time.perf_counter_ns() - t_start) / 1e6
         self.repository.record_latency(total_pipeline_ms)
+
+        # 10. Broadcast Real-Time WebSocket Events
+        if self.ws_manager is not None:
+            # 10a. Observation Updated Event
+            obs_payload = ObservationUpdatedPayload(
+                station_id=observation.station_id,
+                station_name=observation.station_name,
+                timestamp=observation.timestamp.astimezone(timezone.utc).isoformat(),
+                temperature=observation.temperature,
+                humidity=observation.humidity,
+                pressure=observation.pressure,
+                dew_point_c=observation.dew_point_c,
+                data_quality_status=str(observation.data_quality_status.value if hasattr(observation.data_quality_status, "value") else observation.data_quality_status),
+                freshness_seconds=0,
+            )
+            self.ws_manager.broadcast_sync(WebSocketEnvelope.create(
+                event_id=f"OBS-{observation.station_id[-6:]}-{self.event_counter:04d}",
+                event_type=EventType.OBSERVATION_UPDATED,
+                station_id=observation.station_id,
+                timestamp=observation.timestamp,
+                payload=obs_payload,
+            ))
+
+            # 10b. Anomaly Created Event (if anomalous)
+            if is_anomalous and assigned_event_id is not None:
+                anom_payload = AnomalyCreatedPayload(
+                    event_id=assigned_event_id,
+                    station_id=observation.station_id,
+                    station_name=observation.station_name,
+                    timestamp=observation.timestamp.astimezone(timezone.utc).isoformat(),
+                    decision=str(decision.decision.value if hasattr(decision.decision, "value") else decision.decision),
+                    severity=str(decision.severity.value if hasattr(decision.severity, "value") else decision.severity),
+                    summary=explanation.summary,
+                    reason_codes=[str(r.value if hasattr(r, "value") else r) for r in decision.reason_codes],
+                    observed_values=target_vals,
+                    recommended_values={"temperature_c": corr_rec.recommended_value if corr_rec else None},
+                )
+                self.ws_manager.broadcast_sync(WebSocketEnvelope.create(
+                    event_id=assigned_event_id,
+                    event_type=EventType.ANOMALY_CREATED,
+                    station_id=observation.station_id,
+                    timestamp=observation.timestamp,
+                    payload=anom_payload,
+                ))
+
+            # 10c. Health Updated Event
+            param_health_dict = {
+                k: (v.health_score if hasattr(v, "health_score") else v)
+                for k, v in (health_summary.parameter_health or {}).items()
+            }
+            comp_scores_dict = (
+                health_summary.component_scores.model_dump()
+                if hasattr(health_summary.component_scores, "model_dump")
+                else (health_summary.component_scores if isinstance(health_summary.component_scores, dict) else {})
+            )
+            health_payload = HealthUpdatedPayload(
+                station_id=observation.station_id,
+                timestamp=observation.timestamp.astimezone(timezone.utc).isoformat(),
+                health_index=health_summary.overall_health_score,
+                health_status=str(health_summary.status_band.value if hasattr(health_summary.status_band, "value") else health_summary.status_band),
+                health_trend=str(health_summary.trend.value if hasattr(health_summary.trend, "value") else health_summary.trend),
+                maintenance_recommendation=str(health_summary.maintenance_recommendation.value if hasattr(health_summary.maintenance_recommendation, "value") else health_summary.maintenance_recommendation),
+                parameter_health=param_health_dict,
+                component_scores=comp_scores_dict,
+            )
+            self.ws_manager.broadcast_sync(WebSocketEnvelope.create(
+                event_id=f"HLT-{observation.station_id[-6:]}-{self.event_counter:04d}",
+                event_type=EventType.HEALTH_UPDATED,
+                station_id=observation.station_id,
+                timestamp=observation.timestamp,
+                payload=health_payload,
+            ))
+
+            # 10d. Correction Created Event (if correction generated)
+            if corr_rec is not None:
+                corr_ts_str = (
+                    corr_rec.timestamp.astimezone(timezone.utc).isoformat()
+                    if isinstance(corr_rec.timestamp, datetime)
+                    else str(corr_rec.timestamp)
+                )
+                conf_lower = corr_rec.uncertainty.estimate_range[0] if corr_rec.uncertainty else None
+                conf_upper = corr_rec.uncertainty.estimate_range[1] if corr_rec.uncertainty else None
+                corr_payload = CorrectionCreatedPayload(
+                    observation_id=corr_rec.observation_id or f"OBS-{observation.station_id}",
+                    station_id=observation.station_id,
+                    timestamp=corr_ts_str,
+                    target_variable=corr_rec.target_variable,
+                    observed_value=corr_rec.observed_value,
+                    recommended_value=corr_rec.recommended_value,
+                    confidence_lower=conf_lower,
+                    confidence_upper=conf_upper,
+                    status=str(corr_rec.status.value if hasattr(corr_rec.status, "value") else corr_rec.status),
+                    method=str(corr_rec.method.value if hasattr(corr_rec.method, "value") else corr_rec.method),
+                )
+                self.ws_manager.broadcast_sync(WebSocketEnvelope.create(
+                    event_id=f"CORR-{observation.station_id[-6:]}-{self.event_counter:04d}",
+                    event_type=EventType.CORRECTION_CREATED,
+                    station_id=observation.station_id,
+                    timestamp=observation.timestamp,
+                    payload=corr_payload,
+                ))
 
         # Build latency profile
         latency_breakdown = ProcessingLatencyBreakdown(

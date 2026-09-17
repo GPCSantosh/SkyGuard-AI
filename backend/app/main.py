@@ -48,8 +48,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API v1 Router
+from backend.app.api.v1.endpoints.ws import router as ws_router
+
+# Include API v1 Router & WebSocket Router
 app.include_router(api_v1_router, prefix=settings.api_prefix)
+app.include_router(ws_router)
 
 
 @app.get("/", tags=["Root"])

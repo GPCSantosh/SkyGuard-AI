@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 interface HealthScoreProps {
   score?: number | null;
   band?: HealthStatusBand | string;
-  trend?: 'IMPROVING' | 'STABLE' | 'DEGRADING';
+  trend?: 'IMPROVING' | 'STABLE' | 'DEGRADING' | 'INSUFFICIENT_HISTORY' | string;
   size?: 'sm' | 'md' | 'lg';
   showDisclaimer?: boolean;
 }

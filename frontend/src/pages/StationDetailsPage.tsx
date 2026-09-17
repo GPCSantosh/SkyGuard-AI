@@ -208,7 +208,7 @@ export const StationDetailsPage: React.FC = () => {
 
           {healthData && (
             <HealthTrend
-              components={healthData.components}
+              components={healthData.component_scores}
               parameterHealth={healthData.parameter_health}
             />
           )}

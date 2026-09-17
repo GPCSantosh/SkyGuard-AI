@@ -76,7 +76,8 @@ frontend/src/
 │   └── SystemStatusPage.tsx         # /system (Subsystem Observability & Replay Simulator)
 │
 ├── types/                # Domain TypeScript contracts matching FastAPI schemas
-│   └── api.ts            # WeatherObservation, AnomalyRecord, ExplanationSummary, etc.
+│   ├── api.ts            # WeatherObservation, AnomalyRecord, ExplanationSummary, etc.
+│   └── events.ts         # WebSocketEnvelope, EventType, payload contracts
 │
 ├── App.tsx               # Client router & QueryClientProvider setup
 ├── main.tsx              # Application entry point

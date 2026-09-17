@@ -44,6 +44,8 @@ export const TopBar: React.FC = () => {
           isConnected={streamState.isConnected}
           secondsSinceLastUpdate={streamState.secondsSinceLastUpdate}
           lastHeartbeat={streamState.lastHeartbeat}
+          connectionStatus={streamState.connectionStatus}
+          transportMode={streamState.transportMode}
         />
       </div>
 

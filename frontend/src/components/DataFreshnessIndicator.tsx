@@ -1,25 +1,40 @@
 import React from 'react';
-import { Wifi, WifiOff } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { ConnectionStatus } from '../types/events';
 
 interface DataFreshnessIndicatorProps {
   isConnected: boolean;
   secondsSinceLastUpdate: number;
   lastHeartbeat?: Date | null;
+  connectionStatus?: ConnectionStatus;
+  transportMode?: 'WEBSOCKET' | 'POLLING';
 }
 
 export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   isConnected,
   secondsSinceLastUpdate,
   lastHeartbeat,
+  connectionStatus = 'CONNECTED',
+  transportMode = 'WEBSOCKET',
 }) => {
-  let statusText = 'LIVE STREAM · POLLING (15s)';
+  let statusText = 'LIVE STREAM · WEBSOCKET';
   let pulseColor = 'bg-emerald-400';
   let badgeBorder = 'border-emerald-800/80 bg-emerald-950/40 text-emerald-300';
+  let showSpinner = false;
 
-  if (!isConnected) {
+  if (connectionStatus === 'CONNECTING' || connectionStatus === 'RECONNECTING') {
+    statusText = connectionStatus === 'CONNECTING' ? 'CONNECTING WEBSOCKET...' : 'STREAM RECONNECTING...';
+    pulseColor = 'bg-amber-400';
+    badgeBorder = 'border-amber-800/80 bg-amber-950/40 text-amber-300';
+    showSpinner = true;
+  } else if (connectionStatus === 'DISCONNECTED' || connectionStatus === 'ERROR' || !isConnected) {
     statusText = 'STREAM OFFLINE / DISCONNECTED';
     pulseColor = 'bg-red-500';
     badgeBorder = 'border-red-800/80 bg-red-950/40 text-red-400';
+  } else if (transportMode === 'POLLING') {
+    statusText = 'LIVE STREAM · POLLING (15s)';
+    pulseColor = 'bg-blue-400';
+    badgeBorder = 'border-blue-800/80 bg-blue-950/40 text-blue-300';
   } else if (secondsSinceLastUpdate > 60) {
     statusText = `TELEMETRY STALE (${secondsSinceLastUpdate}s)`;
     pulseColor = 'bg-amber-400';
@@ -35,7 +50,9 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
         <span className={`relative inline-flex rounded-full h-2 w-2 ${pulseColor}`} />
       </span>
       <span className="tracking-wide font-medium">{statusText}</span>
-      {isConnected ? (
+      {showSpinner ? (
+        <RefreshCw className="w-3.5 h-3.5 opacity-80 animate-spin text-amber-400" />
+      ) : isConnected ? (
         <Wifi className="w-3.5 h-3.5 opacity-80" />
       ) : (
         <WifiOff className="w-3.5 h-3.5 opacity-80 text-red-400" />

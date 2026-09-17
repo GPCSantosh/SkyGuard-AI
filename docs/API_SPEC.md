@@ -98,3 +98,12 @@ Query model-derived advisory correction recommendations for human-in-the-loop re
 Retrieve granular audit details for a specific correction recommendation.
 - **Response**: `CorrectionRecommendation`
 
+---
+
+### 2.7. Real-Time Streaming WebSocket Endpoint (`/ws/stream`)
+
+#### `WS /ws/stream` and `WS /api/v1/ws/stream`
+Full-duplex real-time streaming channel for live observation telemetry, ML anomaly detections, rolling sensor health indexes, and system notifications.
+- **Envelope**: `WebSocketEnvelope` (`event_id`, `event_type`, `timestamp`, `station_id`, `payload`, `schema_version: "1.0"`)
+- **Protocol Details**: Refer to [`docs/WEBSOCKET_PROTOCOL.md`](file:///d:/Projects/sih_project/docs/WEBSOCKET_PROTOCOL.md)
+

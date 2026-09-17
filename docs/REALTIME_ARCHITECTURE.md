@@ -68,3 +68,13 @@ The `StreamReplayEngine` allows operators and automated verification suites to r
 1. **ML Model Failure Resiliency**: If model inference raises an exception or GPU memory crashes, the engine catches the exception, flags `ml_model_failed=True`, records `EvidenceState.UNAVAILABLE`, and seamlessly falls back to pure physical/spatial/temporal rule-based arbitration without service disruption.
 2. **Missing Sensor Variables**: Incomplete telemetry packets gracefully compute partial features, bypassing dependent gates while maintaining full quality control on available parameters.
 3. **Non-Destructive Storage**: Original raw measurements are persisted without modification. Imputed/recommended values are attached as advisory metadata with full provenance.
+
+---
+
+## 6. Real-Time WebSocket Streaming Transport
+
+- **Streaming Endpoint**: `/ws/stream` (with `/api/v1/ws/stream` alias).
+- **Transport Mechanism**: Async, non-blocking broadcast dispatch via `WebSocketConnectionManager`.
+- **Event Envelope**: Stable `v1.0` envelope with unique `event_id`, UTC ISO-8601 timestamp, and typed payload schemas.
+- **Client Guarantees**: Client-side LRU deduplication (capacity 1000), monotonic per-station timestamp ordering, exponential backoff with jitter (1s–30s), and automatic query cache reconciliation upon reconnection.
+- **Resilient Fallback**: Transparently falls back to background HTTP polling when disconnected.

@@ -140,11 +140,25 @@ Phase 8 tests verify:
 
 ---
 
-## 13. Test Commands
+## 13. Phase 10 Test Suite (Real-Time WebSocket Transport & Integration)
+Phase 10 tests verify:
+- **`test_websocket_protocol.py`**: Pydantic schema validation for standardized event envelope (`WebSocketEnvelope`), all payload models (`observation.updated`, `anomaly.created`, `anomaly.updated`, `health.updated`, `correction.created`, `station.status_changed`, `system.status_changed`), serialization/deserialization, and invalid payload rejection.
+- **`test_websocket_manager.py`**: Connection lifecycle (`connect`, `disconnect`), multi-client broadcast dispatching, disconnected client cleanup during active broadcast, and broadcast latency metrics profiling.
+- **`test_websocket_stream.py`**: Full-duplex WebSocket communication over `/ws/stream`, initial welcome envelope transmission, heartbeat ping/pong protocol, live observation & anomaly event publication, and replay simulation stepping broadcast.
+- **`test_websocket_performance.py`**: 20-station simulated continuous streaming (240 observations) and burst load under active WebSocket broadcasting, verifying sub-millisecond broadcast latency, high event throughput, zero dropped messages, and memory bounds.
+- **`websocket.test.mjs`**: Frontend unit verification of LRU event deduplication, monotonic per-station timestamp ordering, exponential backoff with jitter, and transport state machine transitions with polling fallback.
+
+---
+
+## 14. Test Commands
 ```bash
-# Run full test suite (Phases 0 - 8, 241+ tests)
+# Run full test suite (Phases 0 - 10, 257+ tests)
 pytest -v
 
-# Run specific Phase 8 Real-Time tests
-pytest -v tests/unit/test_realtime_state.py tests/unit/test_database_repository.py tests/unit/test_realtime_engine.py tests/unit/test_replay_simulator.py tests/integration/test_api_endpoints.py tests/performance/test_20_station_load.py
+# Run specific Phase 10 WebSocket tests
+pytest -v tests/unit/test_websocket_protocol.py tests/unit/test_websocket_manager.py tests/integration/test_websocket_stream.py tests/performance/test_websocket_performance.py
+
+# Run Frontend unit & WebSocket tests
+node frontend/src/__tests__/run_tests.mjs
+node frontend/src/__tests__/websocket.test.mjs
 ```

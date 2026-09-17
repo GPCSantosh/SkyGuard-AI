@@ -10,6 +10,7 @@ from backend.app.api.v1.endpoints.observations import router as observations_rou
 from backend.app.api.v1.endpoints.replay import router as replay_router
 from backend.app.api.v1.endpoints.stations import router as stations_router
 from backend.app.api.v1.endpoints.system import router as system_router
+from backend.app.api.v1.endpoints.ws import router as ws_router
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ router.include_router(corrections_router)
 router.include_router(observations_router)
 router.include_router(system_router)
 router.include_router(replay_router)
+router.include_router(ws_router)
 
 
 @router.get("/health", tags=["Health"])

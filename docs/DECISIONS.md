@@ -18,6 +18,9 @@
 | ADR-012 | Regional Weather Event Protection in Health Degradation Tracking | Accepted | 2026-09-17 |
 | ADR-013 | Controlled Data Imputation & Advisory Correction Separation | Accepted | 2026-09-17 |
 | ADR-014 | Multivariate Thermodynamic Consistency in Candidate Corrections | Accepted | 2026-09-17 |
+| ADR-015 | Bounded In-Memory Real-Time State Buffer & Causal Isolation | Accepted | 2026-09-17 |
+| ADR-016 | Deterministic Streaming Replay Simulator with Synchronous Stepping | Accepted | 2026-09-17 |
+| ADR-017 | Real-Time WebSocket Transport with Resilient Polling Fallback | Accepted | 2026-09-17 |
 
 
 ---
@@ -152,3 +155,11 @@
 - **Context:** Automated end-to-end integration tests and operational simulations must test high-velocity streaming scenarios without requiring live external AWS connections or nondeterministic network waits.
 - **Decision:** Implement `StreamReplayEngine` capable of variable speed streaming ($1\times$ to $\infty$) and deterministic synchronous stepping (`run_synchronous_simulation`), with non-leaking synthetic anomaly injection for ground-truth benchmarking.
 - **Consequences:** Provides fast, repeatable, and robust verification of the complete real-time processing and API stack.
+
+---
+
+## ADR-017: Real-Time WebSocket Transport with Resilient Polling Fallback
+- **Status:** Accepted
+- **Context:** Operations engineers and monitoring consoles require instantaneous push-based notification of anomaly alerts, telemetry changes, and sensor degradation without relying on 15-second polling or manual browser refreshes. However, networks experience transient disconnects where WebSocket connections may drop.
+- **Decision:** Implement a typed WebSocket streaming channel (`/ws/stream`) using a standardized envelope (`v1.0`), idempotent deduplication (`event_id`), monotonic per-station timestamp ordering, exponential backoff reconnection, and full reconnection resync. When WebSocket connectivity is interrupted, the client transparently falls back to background HTTP polling, clearly flagging transport status in the UI.
+- **Consequences:** Provides sub-millisecond event broadcast latencies and immediate dashboard updates while maintaining 100% operational resilience during network disruptions.
