@@ -101,7 +101,7 @@ async def test_anomalies_and_explanation_endpoints():
         timestamp=datetime(2026, 9, 17, 12, 10, 0, tzinfo=timezone.utc),
         latitude=28.585,
         longitude=77.206,
-        temperature=58.0,  # Extreme localized heat spike (nominal was 26.5)
+        temperature=58.0,  # Extreme heat jump (nominal baseline was 26.5)
         humidity=10.0,
         pressure=1013.25,
         source=ObservationSource.SIMULATOR,

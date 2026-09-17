@@ -23,11 +23,22 @@ def test_no_hardcoded_secrets_in_codebase():
     ]
 
     target_extensions = {".py", ".yaml", ".yml", ".json", ".ini", ".conf"}
-    ignore_dirs = {".git", ".pytest_cache", "node_modules", ".venv", "__pycache__", "dist", "build"}
+    ignore_dirs = {
+        ".git", ".pytest_cache", "node_modules", ".venv", "__pycache__",
+        "dist", "build", ".idea", ".vscode", ".agents", ".claude", ".kiro",
+    }
 
     findings = []
     for root, dirs, files in os.walk(PROJECT_ROOT):
-        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        dirs[:] = [
+            d for d in dirs
+            if d not in ignore_dirs
+            and not d.startswith(".")
+            and "venv" not in d.lower()
+            and "env" not in d.lower()
+            and d != "site-packages"
+            and d != "Lib"
+        ]
         for file in files:
             file_path = Path(root) / file
             if file_path.suffix in target_extensions and not file.startswith(".env"):

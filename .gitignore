@@ -57,7 +57,8 @@ cover/
 
 # Environments
 .env
-.venv
+.venv*
+*venv*
 env/
 venv/
 ENV/
@@ -89,11 +90,10 @@ logs/*.log
 !logs/.gitkeep
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
+data/skyguard_dev.db*
+
+# Raw incoming data (keep .gitkeep)
 data/raw/*
 !data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-data/external/*
-!data/external/.gitkeep
-models/registry/*.joblib
-!models/registry/.gitkeep

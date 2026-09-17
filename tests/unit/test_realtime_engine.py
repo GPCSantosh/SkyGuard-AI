@@ -5,6 +5,7 @@ import pytest
 
 from backend.app.core.database import DatabaseRepository
 from backend.app.core.engine import RealTimeProcessingEngine
+from backend.app.db.session import DatabaseSessionManager
 from backend.app.models.observation import ObservationSource, QualityStatus, WeatherObservation
 from backend.app.models.processing import ProcessingStatus
 from ml.spatial.topology import SpatialNetworkTopology, StationNode
@@ -15,7 +16,8 @@ def test_engine():
     topo = SpatialNetworkTopology()
     topo.add_station(StationNode(station_id="STN_001", name="Station 1", latitude=28.6, longitude=77.2, elevation_m=200.0))
     topo.add_station(StationNode(station_id="STN_002", name="Station 2", latitude=28.58, longitude=77.23, elevation_m=205.0))
-    repo = DatabaseRepository(topology=topo)
+    session_manager = DatabaseSessionManager("sqlite:///:memory:")
+    repo = DatabaseRepository(topology=topo, session_manager=session_manager)
     return RealTimeProcessingEngine(repository=repo)
 
 
@@ -91,10 +93,21 @@ def test_resilient_ml_model_failure_fallback(test_engine):
 
 
 def test_anomaly_event_generation_and_id(test_engine):
-    # First establish normal baseline at neighbor
+    # 1. Establish normal baseline at STN_001 and neighbor STN_002
+    obs_base_1 = WeatherObservation(
+        station_id="STN_001",
+        timestamp=datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc),
+        latitude=28.6,
+        longitude=77.2,
+        temperature=25.0,
+        humidity=50.0,
+        pressure=1013.25,
+    )
+    test_engine.process_observation(obs_base_1)
+
     obs_n = WeatherObservation(
         station_id="STN_002",
-        timestamp=datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 9, 17, 12, 5, 0, tzinfo=timezone.utc),
         latitude=28.58,
         longitude=77.23,
         temperature=25.0,
@@ -103,10 +116,10 @@ def test_anomaly_event_generation_and_id(test_engine):
     )
     test_engine.process_observation(obs_n)
 
-    # Target station has unphysical 120°C hardware short circuit
+    # 2. Target station experiences an extreme +33°C jump in 5 minutes
     obs_target = WeatherObservation(
         station_id="STN_001",
-        timestamp=datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 9, 17, 12, 5, 0, tzinfo=timezone.utc),
         latitude=28.6,
         longitude=77.2,
         temperature=58.0,

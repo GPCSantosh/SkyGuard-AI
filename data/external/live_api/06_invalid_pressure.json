@@ -1,0 +1,20 @@
+{
+  "_provenance": {
+    "provider": "open_meteo",
+    "endpoint": "https://api.open-meteo.com/v1/forecast",
+    "retrieved_at_utc": "2026-09-17T05:00:00Z",
+    "station_id": "AWS_DELHI_001",
+    "scenario": "06_invalid_pressure"
+  },
+  "latitude": 28.585,
+  "longitude": 77.206,
+  "elevation": 216.0,
+  "current": {
+    "time": "2026-09-17T05:00:00Z",
+    "interval": 900,
+    "temperature_2m": 28.4,
+    "relative_humidity_2m": 62.0,
+    "pressure_msl": 1500.0,
+    "surface_pressure": 1480.0
+  }
+}

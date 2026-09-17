@@ -1,0 +1,12 @@
+{
+  "_provenance": {
+    "provider": "open_meteo",
+    "endpoint": "https://api.open-meteo.com/v1/forecast",
+    "retrieved_at_utc": "2026-09-17T05:00:00Z",
+    "station_id": "AWS_DELHI_001",
+    "scenario": "14_api_error_response",
+    "http_status": 500
+  },
+  "error": true,
+  "reason": "Internal Server Error: model backend timed out"
+}

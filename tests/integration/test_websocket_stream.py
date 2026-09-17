@@ -79,14 +79,31 @@ async def test_websocket_stream_receives_observation_and_anomaly_events():
     await ws_manager.connect(mock_client)
 
     try:
+        # Initial baseline observation
+        base_obs = WeatherObservation(
+            station_id="42182099999",
+            station_name="NEW DELHI / SAFDARJUNG",
+            latitude=28.585,
+            longitude=77.206,
+            elevation=216.0,
+            timestamp=datetime(2026, 9, 17, 13, 0, 0, tzinfo=timezone.utc),
+            temperature=25.0,
+            humidity=50.0,
+            pressure=1013.25,
+            source=ObservationSource.SIMULATOR,
+            data_quality_status=QualityStatus.VALID,
+        )
+        engine.process_observation(base_obs)
+
+        # Extreme rapid heat spike 5 minutes later
         anom_obs = WeatherObservation(
             station_id="42182099999",
             station_name="NEW DELHI / SAFDARJUNG",
             latitude=28.585,
             longitude=77.206,
             elevation=216.0,
-            timestamp=datetime(2026, 9, 17, 10, 0, 0, tzinfo=timezone.utc),
-            temperature=58.5,  # extreme spike
+            timestamp=datetime(2026, 9, 17, 13, 5, 0, tzinfo=timezone.utc),
+            temperature=58.5,  # extreme rate jump (+33.5°C in 5 min)
             humidity=10.0,
             pressure=1013.25,
             source=ObservationSource.SIMULATOR,
@@ -105,7 +122,10 @@ async def test_websocket_stream_receives_observation_and_anomaly_events():
         assert "health.updated" in event_types
 
         # Verify anomaly event content
-        anom_frame = next(f for f in mock_client.sent_frames if f["event_type"] == "anomaly.created")
+        anom_frame = next(
+            f for f in mock_client.sent_frames
+            if f["event_type"] == "anomaly.created" and f["event_id"] == res.event_id
+        )
         assert anom_frame["event_id"] == res.event_id
         assert anom_frame["station_id"] == "42182099999"
         assert anom_frame["payload"]["decision"] in ("PROBABLE_SENSOR_ANOMALY", "UNCERTAIN")

@@ -1,0 +1,12 @@
+{
+  "_provenance": {
+    "provider": "open_meteo_enterprise",
+    "endpoint": "https://customer-api.open-meteo.com/v1/forecast",
+    "retrieved_at_utc": "2026-09-17T05:00:00Z",
+    "station_id": "AWS_DELHI_001",
+    "scenario": "16_authentication_failure",
+    "http_status": 401
+  },
+  "error": true,
+  "reason": "Invalid or expired API token: apikey=[REDACTED]"
+}
