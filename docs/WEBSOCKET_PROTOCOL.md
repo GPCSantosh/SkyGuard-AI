@@ -13,31 +13,23 @@ SkyGuard AI provides a high-throughput, low-latency WebSocket streaming endpoint
 
 ```mermaid
 flowchart TD
-    Obs["WeatherObservation"] --> Engine["RealTimeProcessingEngine"]
-    
-    subgraph AnalyticalPipeline ["Analytical Pipeline"]
-        Engine --> Ingest["Ingestion / Causal State"]
-        Ingest --> ML["ML Inference"]
-        ML --> Spatial["Spatial Context"]
-        Spatial --> Hybrid["Hybrid Decision"]
-        Hybrid --> Explain["Explainability"]
-        Explain --> Health["Sensor Health"]
-        Health --> Correction["Correction"]
-        Correction --> Persistence["Persistence"]
-    end
-    
-    Persistence --> WSM["WebSocket Connection Manager"]
-    Replay["StreamReplayEngine"] --> WSM
-    
-    WSM --> Stream["/ws/stream"]
-    Stream --> Hook["React useRealtimeStream"]
-    
-    subgraph ClientFlow ["Client Stream Management"]
-        Hook --> Dedup["Deduplication"]
-        Dedup --> Order["Ordering Guard"]
-        Order --> QueryCache["TanStack Query"]
-        QueryCache --> Dashboard["Dashboard"]
-    end
+    WeatherObservation["WeatherObservation"] --> RealTimeProcessingEngine["RealTimeProcessingEngine"]
+    RealTimeProcessingEngine --> IngestionCausalState["Ingestion / Causal State"]
+    IngestionCausalState --> MLInference["ML Inference"]
+    MLInference --> SpatialContext["Spatial Context"]
+    SpatialContext --> HybridDecision["Hybrid Decision"]
+    HybridDecision --> Explainability["Explainability"]
+    Explainability --> SensorHealth["Sensor Health"]
+    SensorHealth --> Correction["Correction"]
+    Correction --> Persistence["Persistence"]
+    Persistence --> WebSocketConnectionManager["WebSocket Connection Manager"]
+    StreamReplayEngine["StreamReplayEngine"] --> WebSocketConnectionManager
+    WebSocketConnectionManager --> WSStream["/ws/stream"]
+    WSStream --> ReactUseRealtimeStream["React useRealtimeStream"]
+    ReactUseRealtimeStream --> Deduplication["Deduplication"]
+    Deduplication --> OrderingGuard["Ordering Guard"]
+    OrderingGuard --> TanStackQuery["TanStack Query"]
+    TanStackQuery --> Dashboard["Dashboard"]
 ```
 
 ---

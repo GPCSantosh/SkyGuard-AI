@@ -22,7 +22,17 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
   let badgeBorder = 'border-emerald-800/80 bg-emerald-950/40 text-emerald-300';
   let showSpinner = false;
 
-  if (connectionStatus === 'CONNECTING' || connectionStatus === 'RECONNECTING') {
+  if (connectionStatus === 'CONNECTED' && transportMode === 'WEBSOCKET') {
+    statusText = 'LIVE STREAM · WEBSOCKET';
+    pulseColor = 'bg-emerald-400';
+    badgeBorder = 'border-emerald-800/80 bg-emerald-950/40 text-emerald-300';
+    showSpinner = false;
+  } else if (transportMode === 'POLLING' && isConnected) {
+    statusText = 'LIVE STREAM · POLLING (15s)';
+    pulseColor = 'bg-blue-400';
+    badgeBorder = 'border-blue-800/80 bg-blue-950/40 text-blue-300';
+    showSpinner = false;
+  } else if (connectionStatus === 'CONNECTING' || connectionStatus === 'RECONNECTING') {
     statusText = connectionStatus === 'CONNECTING' ? 'CONNECTING WEBSOCKET...' : 'STREAM RECONNECTING...';
     pulseColor = 'bg-amber-400';
     badgeBorder = 'border-amber-800/80 bg-amber-950/40 text-amber-300';
@@ -31,10 +41,6 @@ export const DataFreshnessIndicator: React.FC<DataFreshnessIndicatorProps> = ({
     statusText = 'STREAM OFFLINE / DISCONNECTED';
     pulseColor = 'bg-red-500';
     badgeBorder = 'border-red-800/80 bg-red-950/40 text-red-400';
-  } else if (transportMode === 'POLLING') {
-    statusText = 'LIVE STREAM · POLLING (15s)';
-    pulseColor = 'bg-blue-400';
-    badgeBorder = 'border-blue-800/80 bg-blue-950/40 text-blue-300';
   } else if (secondsSinceLastUpdate > 60) {
     statusText = `TELEMETRY STALE (${secondsSinceLastUpdate}s)`;
     pulseColor = 'bg-amber-400';

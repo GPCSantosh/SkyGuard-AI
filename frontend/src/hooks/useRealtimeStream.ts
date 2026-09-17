@@ -155,14 +155,12 @@ export function useRealtimeStream(): StreamState {
     const connectWs = () => {
       if (!isMountedRef.current) return;
 
-      // Determine WebSocket URL: Check explicit VITE_WS_URL first, then reverse-proxy relative origin, with local dev fallback
+      // Determine WebSocket URL: Check explicit VITE_WS_URL first, then reverse-proxy relative origin
       const envWsUrl = (import.meta as any).env?.VITE_WS_URL;
       let wsUrl = envWsUrl;
       if (!wsUrl) {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const isDevPort = window.location.port === '5173' || window.location.port === '3000';
-        const hostPort = isDevPort ? `${window.location.hostname}:8000` : window.location.host;
-        wsUrl = `${protocol}//${hostPort}/ws/stream`;
+        wsUrl = `${protocol}//${window.location.host}/ws/stream`;
       }
 
       try {
