@@ -140,13 +140,25 @@ export interface ExplanationSummary {
 }
 
 export interface HealthComponentScores {
-  anomaly_score: number; // 0-100
-  data_quality_score: number; // 0-100
-  communication_score: number; // 0-100
-  temporal_stability_score: number; // 0-100
-  spatial_consistency_score: number; // 0-100
+  anomaly_health: number; // 0-100
+  data_quality_health: number; // 0-100
+  communication_health: number; // 0-100
+  temporal_stability_health: number; // 0-100
+  spatial_consistency_health: number; // 0-100
 }
 
+/** Individual meteorological parameter channel reliability. health_score is null if insufficient history. */
+export interface ParameterHealth {
+  parameter_name: string;
+  health_score: number | null;
+  status_band: HealthStatusBand;
+  trend: 'IMPROVING' | 'STABLE' | 'DEGRADING' | 'INSUFFICIENT_HISTORY';
+  drift_indicator?: number | null;
+  flatline_duration_minutes?: number;
+  supporting_evidence?: string[];
+}
+
+/** @deprecated Use ParameterHealth keyed dict instead. Retained for legacy compatibility. */
 export interface ParameterHealthScores {
   temperature_health?: number | null;
   humidity_health?: number | null;
@@ -155,17 +167,26 @@ export interface ParameterHealthScores {
 
 export interface SensorHealthSummary {
   station_id: string;
-  timestamp: string;
-  overall_health_score: number; // 0-100
+  window_name: string;
+  overall_health_score: number | null; // 0-100
   status_band: HealthStatusBand;
-  trend: 'IMPROVING' | 'STABLE' | 'DEGRADING';
-  components: HealthComponentScores;
-  parameter_health: ParameterHealthScores;
-  anomaly_count_24h: number;
-  missing_intervals_24h: number;
-  data_completeness_pct_24h: number;
+  trend: 'IMPROVING' | 'STABLE' | 'DEGRADING' | 'INSUFFICIENT_HISTORY';
+  health_delta?: number | null;
+  component_scores: HealthComponentScores;
+  /** Dict keyed by parameter name (e.g. 'temperature_c', 'relative_humidity', 'sea_level_pressure_hpa') */
+  parameter_health: Record<string, ParameterHealth>;
   maintenance_recommendation: string;
-  evaluated_at: string;
+  reason_codes: string[];
+  summary: string;
+  supporting_evidence: string[];
+  recommended_action: string;
+  audit_metadata: {
+    health_engine_version: string;
+    window_name: string;
+    window_hours: number;
+    total_observations_evaluated: number;
+    generated_at: string;
+  };
 }
 
 export interface UncertaintyEstimate {

@@ -41,9 +41,13 @@ export const SensorHealthPage: React.FC = () => {
       header: 'Health Index',
       align: 'center',
       render: (stn) => {
-        const score = stn.latest_snapshot?.latest_health_score ?? 100;
-        const color = score < 60 ? 'text-red-400' : score < 85 ? 'text-amber-400' : 'text-emerald-400';
-        return <span className={`font-mono font-bold ${color}`}>{formatHealthScore(score)}/100</span>;
+        const score = stn.latest_snapshot?.latest_health_score ?? null;
+        const color = score === null ? 'text-slate-500' : score < 60 ? 'text-red-400' : score < 85 ? 'text-amber-400' : 'text-emerald-400';
+        return (
+          <span className={`font-mono font-bold ${color}`}>
+            {score !== null ? `${formatHealthScore(score)}/100` : '--/100'}
+          </span>
+        );
       },
       sortable: true,
     },
@@ -148,14 +152,14 @@ export const SensorHealthPage: React.FC = () => {
           </div>
 
           <HealthScore
-            score={selectedHealth?.overall_health_score ?? activeStation?.latest_snapshot?.latest_health_score ?? 100}
+            score={selectedHealth?.overall_health_score ?? activeStation?.latest_snapshot?.latest_health_score ?? null}
             band={selectedHealth?.status_band ?? activeStation?.latest_snapshot?.latest_health_band ?? 'HEALTHY'}
             trend={selectedHealth?.trend ?? 'STABLE'}
             showDisclaimer={true}
           />
 
           <HealthTrend
-            components={selectedHealth?.components}
+            components={selectedHealth?.component_scores}
             parameterHealth={selectedHealth?.parameter_health}
           />
 

@@ -152,7 +152,7 @@ class CorrectionRecommendationEngine:
                 station_health_score=sensor_health.overall_health_score if sensor_health else None,
                 station_health_band=sensor_health.status_band.value if sensor_health else None,
                 operator_summary=(
-                    f"Observed {target_variable} ({observed_value}) is corroborated by regional "
+                    f"Observed {target_variable} ({observed_value:.2f}) is corroborated by regional "
                     f"atmospheric network dynamics. No correction recommended."
                 ),
             )
@@ -178,7 +178,7 @@ class CorrectionRecommendationEngine:
                 station_health_score=sensor_health.overall_health_score if sensor_health else None,
                 station_health_band=sensor_health.status_band.value if sensor_health else None,
                 operator_summary=(
-                    f"Observed {target_variable} ({observed_value}) is within normal parameters. "
+                    f"Observed {target_variable} ({observed_value:.2f}) is within normal parameters. "
                     f"No correction required."
                 ),
             )
@@ -257,7 +257,7 @@ class CorrectionRecommendationEngine:
                 station_health_score=sensor_health.overall_health_score if sensor_health else None,
                 station_health_band=sensor_health.status_band.value if sensor_health else None,
                 operator_summary=(
-                    f"Observed value {observed_value} is flagged as suspicious ({dec_str}), but evidence "
+                    f"Observed value {observed_value:.2f} is flagged as suspicious ({dec_str}), but evidence "
                     f"is insufficient to formulate a reliable recommended estimate."
                 ),
             )
@@ -364,9 +364,9 @@ class CorrectionRecommendationEngine:
         )
 
         op_summary = (
-            f"Observed {target_variable} ({observed_value}) differs substantially from local baseline and "
-            f"spatial consensus. The model-derived recommended estimate is {recommended_val} "
-            f"(uncertainty range: [{unc.estimate_range[0]}, {unc.estimate_range[1]}]). {status_action}"
+            f"Observed {target_variable} ({observed_value:.2f}) differs substantially from local baseline and "
+            f"spatial consensus. The model-derived recommended estimate is {recommended_val:.2f} "
+            f"(uncertainty range: [{unc.estimate_range[0]:.2f}, {unc.estimate_range[1]:.2f}]). {status_action}"
         )
 
         return CorrectionRecommendation(

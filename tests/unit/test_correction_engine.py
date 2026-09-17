@@ -132,3 +132,62 @@ def test_insufficient_evidence_when_no_neighbors_and_no_history():
     assert rec.status == RecommendationStatus.INSUFFICIENT_EVIDENCE
     assert rec.recommended_value is None
     assert "insufficient" in rec.operator_summary.lower()
+
+
+def test_operator_summary_no_raw_float_precision_for_normal_reading():
+    """Regression: operator_summary must not contain raw IEEE 754 high-precision floats.
+
+    Previously: 'Observed temperature_c (30.746487134128408) is within normal parameters.'
+    Required:   'Observed temperature_c (30.75) is within normal parameters.'
+    """
+    engine = CorrectionRecommendationEngine()
+
+    # Use a value with many decimal places to simulate realistic floating-point telemetry
+    raw_value = 30.746487134128408
+
+    rec = engine.recommend_for_variable(
+        station_id="TARGET",
+        timestamp="2026-09-17T12:00:00Z",
+        target_variable="temperature_c",
+        observed_value=raw_value,
+        decision_type=HybridDecisionType.NORMAL,
+        reason_codes=["NOMINAL_OBSERVATION"],
+    )
+
+    assert rec.status == RecommendationStatus.NO_CORRECTION_RECOMMENDED
+    # The formatted value (2 decimal places) must appear in the summary
+    assert "30.75" in rec.operator_summary, (
+        f"Expected '30.75' (2 d.p.) in operator_summary, got: '{rec.operator_summary}'"
+    )
+    # The raw full-precision float must NOT appear in operator-facing text
+    assert "30.746487134128408" not in rec.operator_summary, (
+        f"Raw IEEE 754 float leaked into operator_summary: '{rec.operator_summary}'"
+    )
+
+
+def test_operator_summary_no_raw_float_precision_for_insufficient_evidence():
+    """Regression: operator_summary for INSUFFICIENT_EVIDENCE path must also format values to 2 d.p."""
+    engine = CorrectionRecommendationEngine()
+
+    raw_value = 35.123456789012345
+
+    rec = engine.recommend_for_variable(
+        station_id="TARGET",
+        timestamp="2026-09-17T12:00:00Z",
+        target_variable="temperature_c",
+        observed_value=raw_value,
+        decision_type=HybridDecisionType.PROBABLE_SENSOR_ANOMALY,
+        temporal_history=[],
+        neighbor_observations=[],
+    )
+
+    assert rec.status == RecommendationStatus.INSUFFICIENT_EVIDENCE
+    # Formatted 2 d.p. value must appear
+    assert "35.12" in rec.operator_summary, (
+        f"Expected '35.12' in operator_summary, got: '{rec.operator_summary}'"
+    )
+    # Full-precision raw float must NOT appear
+    assert "35.123456789012345" not in rec.operator_summary, (
+        f"Raw high-precision float leaked into operator_summary: '{rec.operator_summary}'"
+    )
+
