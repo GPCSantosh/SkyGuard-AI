@@ -200,7 +200,7 @@ export const StationDetailsPage: React.FC = () => {
         <div className="lg:col-span-4 space-y-4">
           {/* Health Summary */}
           <HealthScore
-            score={healthData?.overall_health_score ?? latest?.latest_health_score ?? 100}
+            score={healthData?.overall_health_score ?? latest?.latest_health_score ?? null}
             band={healthData?.status_band ?? latest?.latest_health_band ?? 'HEALTHY'}
             trend={healthData?.trend ?? 'STABLE'}
             showDisclaimer={true}

@@ -70,7 +70,7 @@ export const Sidebar: React.FC = () => {
 
             return (
               <NavLink
-                key={item.to}
+                key={item.label}
                 to={item.to}
                 className={`flex items-center gap-3 px-2.5 py-2 rounded text-data font-medium transition-colors ${
                   isMatch

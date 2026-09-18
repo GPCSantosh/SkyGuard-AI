@@ -23,19 +23,19 @@
       "ml_only_detected_anomalies": 11,
       "hybrid_correct_classifications": 24
     },
-    "executed_at": "2026-09-17T16:19:31Z"
+    "executed_at": "2026-09-17T17:40:33Z"
   },
   "performance": {
     "1_station": {
       "scale_stations": 1,
       "total_cycles": 12,
       "total_observations": 12,
-      "generation_time_ms": 0.63,
-      "throughput_obs_per_sec": 52.4,
-      "latency_p50_ms": 18.34,
-      "latency_p95_ms": 22.77,
-      "latency_p99_ms": 23.24,
-      "latency_mean_ms": 19.08,
+      "generation_time_ms": 0.89,
+      "throughput_obs_per_sec": 64.6,
+      "latency_p50_ms": 14.89,
+      "latency_p95_ms": 18.02,
+      "latency_p99_ms": 18.15,
+      "latency_mean_ms": 15.48,
       "label": "LOCAL SYNTHETIC VALIDATION"
     },
     "8_station": {
@@ -43,23 +43,23 @@
       "total_cycles": 12,
       "total_observations": 96,
       "generation_time_ms": 2.29,
-      "throughput_obs_per_sec": 44.48,
-      "latency_p50_ms": 21.59,
-      "latency_p95_ms": 26.48,
-      "latency_p99_ms": 30.87,
-      "latency_mean_ms": 22.48,
+      "throughput_obs_per_sec": 56.95,
+      "latency_p50_ms": 16.88,
+      "latency_p95_ms": 22.03,
+      "latency_p99_ms": 26.0,
+      "latency_mean_ms": 17.56,
       "label": "LOCAL SYNTHETIC VALIDATION"
     },
     "20_station": {
       "scale_stations": 20,
       "total_cycles": 12,
       "total_observations": 240,
-      "generation_time_ms": 6.52,
-      "throughput_obs_per_sec": 43.37,
-      "latency_p50_ms": 22.48,
-      "latency_p95_ms": 27.47,
-      "latency_p99_ms": 30.56,
-      "latency_mean_ms": 23.05,
+      "generation_time_ms": 4.15,
+      "throughput_obs_per_sec": 56.44,
+      "latency_p50_ms": 16.79,
+      "latency_p95_ms": 23.86,
+      "latency_p99_ms": 26.72,
+      "latency_mean_ms": 17.72,
       "label": "LOCAL SYNTHETIC VALIDATION"
     }
   },
@@ -91,7 +91,7 @@
       "actual": "NORMAL",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 26.0,
+      "mean_latency_ms": 22.64,
       "websocket_events_dispatched": 17481,
       "failure_reasons": []
     },
@@ -122,7 +122,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 78.1,
-      "mean_latency_ms": 23.11,
+      "mean_latency_ms": 21.43,
       "websocket_events_dispatched": 1825,
       "failure_reasons": []
     },
@@ -153,7 +153,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 85.9,
-      "mean_latency_ms": 23.4,
+      "mean_latency_ms": 21.83,
       "websocket_events_dispatched": 1819,
       "failure_reasons": []
     },
@@ -184,7 +184,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 55.0,
-      "mean_latency_ms": 23.67,
+      "mean_latency_ms": 21.22,
       "websocket_events_dispatched": 2489,
       "failure_reasons": []
     },
@@ -215,7 +215,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 55.0,
-      "mean_latency_ms": 23.52,
+      "mean_latency_ms": 20.16,
       "websocket_events_dispatched": 2658,
       "failure_reasons": []
     },
@@ -246,7 +246,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 35.0,
-      "mean_latency_ms": 22.99,
+      "mean_latency_ms": 20.8,
       "websocket_events_dispatched": 2786,
       "failure_reasons": []
     },
@@ -277,7 +277,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 55.0,
-      "mean_latency_ms": 22.85,
+      "mean_latency_ms": 36.31,
       "websocket_events_dispatched": 2356,
       "failure_reasons": []
     },
@@ -308,7 +308,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 73.1,
-      "mean_latency_ms": 22.57,
+      "mean_latency_ms": 40.09,
       "websocket_events_dispatched": 1810,
       "failure_reasons": []
     },
@@ -340,7 +340,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 64.6,
-      "mean_latency_ms": 23.05,
+      "mean_latency_ms": 33.77,
       "websocket_events_dispatched": 1812,
       "failure_reasons": []
     },
@@ -372,7 +372,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 71.3,
-      "mean_latency_ms": 31.98,
+      "mean_latency_ms": 22.54,
       "websocket_events_dispatched": 1810,
       "failure_reasons": []
     },
@@ -404,7 +404,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 71.3,
-      "mean_latency_ms": 36.29,
+      "mean_latency_ms": 36.4,
       "websocket_events_dispatched": 1813,
       "failure_reasons": []
     },
@@ -435,7 +435,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 61.2,
-      "mean_latency_ms": 26.81,
+      "mean_latency_ms": 18.87,
       "websocket_events_dispatched": 1812,
       "failure_reasons": []
     },
@@ -466,7 +466,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 71.3,
-      "mean_latency_ms": 28.21,
+      "mean_latency_ms": 20.08,
       "websocket_events_dispatched": 1816,
       "failure_reasons": []
     },
@@ -497,7 +497,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 71.3,
-      "mean_latency_ms": 24.35,
+      "mean_latency_ms": 23.73,
       "websocket_events_dispatched": 1816,
       "failure_reasons": []
     },
@@ -530,7 +530,7 @@
       "actual": "NORMAL",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 24.43,
+      "mean_latency_ms": 18.91,
       "websocket_events_dispatched": 1754,
       "failure_reasons": []
     },
@@ -563,7 +563,7 @@
       "actual": "PROBABLE_DATA_QUALITY_ISSUE",
       "health_score_before": 100.0,
       "health_score_after": 89.6,
-      "mean_latency_ms": 23.11,
+      "mean_latency_ms": 18.15,
       "websocket_events_dispatched": 1757,
       "failure_reasons": []
     },
@@ -595,7 +595,7 @@
       "actual": "NORMAL",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 23.63,
+      "mean_latency_ms": 17.61,
       "websocket_events_dispatched": 2242,
       "failure_reasons": []
     },
@@ -629,7 +629,7 @@
       "actual": "POSSIBLE_GENUINE_EVENT",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 23.21,
+      "mean_latency_ms": 18.92,
       "websocket_events_dispatched": 1757,
       "failure_reasons": []
     },
@@ -660,7 +660,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 64.0,
-      "mean_latency_ms": 23.24,
+      "mean_latency_ms": 17.39,
       "websocket_events_dispatched": 1880,
       "failure_reasons": []
     },
@@ -691,7 +691,7 @@
       "actual": "PROBABLE_SENSOR_ANOMALY",
       "health_score_before": 100.0,
       "health_score_after": 75.8,
-      "mean_latency_ms": 23.42,
+      "mean_latency_ms": 20.58,
       "websocket_events_dispatched": 1881,
       "failure_reasons": []
     },
@@ -722,7 +722,7 @@
       "actual": "POSSIBLE_GENUINE_EVENT",
       "health_score_before": 100.0,
       "health_score_after": 75.3,
-      "mean_latency_ms": 23.41,
+      "mean_latency_ms": 19.59,
       "websocket_events_dispatched": 2240,
       "failure_reasons": []
     },
@@ -755,7 +755,7 @@
       "actual": "NORMAL",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 23.54,
+      "mean_latency_ms": 30.59,
       "websocket_events_dispatched": 2664,
       "failure_reasons": []
     },
@@ -790,7 +790,7 @@
       "actual": "POSSIBLE_GENUINE_EVENT",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 23.26,
+      "mean_latency_ms": 42.02,
       "websocket_events_dispatched": 2985,
       "failure_reasons": []
     },
@@ -822,7 +822,7 @@
       "actual": "POSSIBLE_GENUINE_EVENT",
       "health_score_before": 100.0,
       "health_score_after": 100.0,
-      "mean_latency_ms": 24.19,
+      "mean_latency_ms": 34.37,
       "websocket_events_dispatched": 3233,
       "failure_reasons": []
     }

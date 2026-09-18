@@ -9,6 +9,7 @@ from backend.app.api.v1.endpoints.corrections import router as corrections_route
 from backend.app.api.v1.endpoints.live import router as live_router
 from backend.app.api.v1.endpoints.observations import router as observations_router
 from backend.app.api.v1.endpoints.replay import router as replay_router
+from backend.app.api.v1.endpoints.runtime import router as runtime_router
 from backend.app.api.v1.endpoints.stations import router as stations_router
 from backend.app.api.v1.endpoints.system import router as system_router
 from backend.app.api.v1.endpoints.ws import router as ws_router
@@ -16,6 +17,7 @@ from backend.app.api.v1.endpoints.ws import router as ws_router
 router = APIRouter()
 
 # Register sub-routers
+router.include_router(runtime_router)
 router.include_router(stations_router)
 router.include_router(anomalies_router)
 router.include_router(corrections_router)
