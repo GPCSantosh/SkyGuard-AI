@@ -1,112 +1,74 @@
 import React from 'react';
-import { SystemHealthStatus } from '../types/api';
-import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { SystemHealthStatus, SystemComponentHealth } from '../types/api';
 
 interface SystemStatusProps {
-  status?: SystemHealthStatus;
+  health?: SystemHealthStatus;
   isLoading?: boolean;
 }
 
-interface ComponentRow {
-  name: string;
-  status: 'OK' | 'WARN' | 'ERROR';
-  details: string;
-}
-
-export const SystemStatus: React.FC<SystemStatusProps> = ({
-  status,
-  isLoading = false,
-}) => {
-  if (isLoading || !status) {
+export const SystemStatus: React.FC<SystemStatusProps> = ({ health, isLoading }) => {
+  if (isLoading) {
     return (
-      <div className="p-4 rounded border border-border bg-surface-1 animate-pulse h-48" />
+      <div className="bg-[#0D131F] border border-[#1E293B] rounded p-4 text-xs font-mono text-[#94A3B8] animate-pulse">
+        Polling inference pipeline diagnostics...
+      </div>
     );
   }
 
-  const components: ComponentRow[] = [
-    {
-      name: 'FastAPI Telemetry Core',
-      status: status.status === 'HEALTHY' ? 'OK' : 'WARN',
-      details: `${status.service} v${status.version}`,
-    },
-    {
-      name: 'Observation Persistence Store',
-      status: status.database_status === 'CONNECTED' ? 'OK' : 'ERROR',
-      details: `${status.active_monitored_stations} monitored stations · ${status.total_observations_processed.toLocaleString()} observations stored`,
-    },
-    {
-      name: 'ML Model Registry',
-      status: status.model_registry_status === 'LOADED' ? 'OK' : 'ERROR',
-      details: `Active Model: ${status.active_model_id} (Pre-trained & Calibrated)`,
-    },
-    {
-      name: 'Hybrid Decision Engine',
-      status: 'OK',
-      details: 'Deterministic Multi-Tier Heuristic + ML Anomaly Fusion',
-    },
-    {
-      name: 'Explainability & XAI Engine',
-      status: 'OK',
-      details: 'TreeSHAP & Multi-Tier Evidence Synthesizer Active',
-    },
-    {
-      name: 'Spatial Topology Engine',
-      status: status.spatial_topology_stations_count > 0 ? 'OK' : 'WARN',
-      details: `${status.spatial_topology_stations_count} Topographic Graph Nodes (Haversine/IDW Context)`,
-    },
-    {
-      name: 'Stream Replay Simulator',
-      status: 'OK',
-      details: status.replay_simulator_status || 'READY / IDLE',
-    },
-  ];
+  const components: SystemComponentHealth[] = health?.components ?? [];
 
   return (
-    <div className="p-4 rounded border border-border bg-surface-1 space-y-3">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
-        <h3 className="text-h2 font-semibold text-slate-100">
-          Core Component Health & Subsystem State
+    <div className="bg-[#0D131F] border border-[#1E293B] rounded overflow-hidden">
+      <div className="p-3 bg-[#111827] border-b border-[#1E293B] flex items-center justify-between">
+        <h3 className="font-mono text-xs font-bold text-[#F8FAFC] uppercase tracking-wider">
+          Diagnostic Pipeline Telemetry
         </h3>
-        <span className="text-[11px] font-mono text-slate-400">
-          All systems nominal
+        <span className="font-mono text-[11px] text-[#64748B]">
+          Sub-50ms Hybrid Inference SLA
         </span>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse table-dense">
+        <table className="w-full text-left border-collapse font-mono text-xs">
           <thead>
-            <tr className="bg-surface-2/60 border-b border-border text-[10px] font-mono text-slate-400 uppercase">
-              <th className="py-2 px-3">Subsystem Component</th>
-              <th className="py-2 px-3 text-center">Operational State</th>
-              <th className="py-2 px-3">Technical Details / Diagnostics</th>
+            <tr className="border-b border-[#1E293B] text-[10px] text-[#64748B] bg-[#0A0E17] uppercase">
+              <th className="py-2 px-3.5">Subsystem</th>
+              <th className="py-2 px-3.5">Status</th>
+              <th className="py-2 px-3.5">Details</th>
+              <th className="py-2 px-3.5 text-right">Latency</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle text-[11px] font-mono">
-            {components.map((comp) => (
-              <tr key={comp.name} className="hover:bg-surface-2/40 transition-colors">
-                <td className="py-2 px-3 font-semibold text-slate-200">
-                  {comp.name}
-                </td>
-                <td className="py-2 px-3 text-center">
-                  {comp.status === 'OK' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-                      <CheckCircle2 className="w-3 h-3" /> ● OK
+          <tbody className="divide-y divide-[#1E293B]/60">
+            {components.map((comp: SystemComponentHealth) => {
+              const isOk = comp.status === 'OK';
+              const isWarn = comp.status === 'WARN';
+              return (
+                <tr key={comp.name} className="hover:bg-[#111827] transition-colors">
+                  <td className="py-2.5 px-3.5 font-semibold text-[#F8FAFC]">
+                    {comp.name}
+                  </td>
+                  <td className="py-2.5 px-3.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-bold uppercase ${
+                        isOk
+                          ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80'
+                          : isWarn
+                          ? 'bg-amber-950/60 text-amber-300 border-amber-800/80'
+                          : 'bg-red-950/60 text-red-300 border-red-800/80'
+                      }`}
+                    >
+                      <span>{comp.status}</span>
                     </span>
-                  ) : comp.status === 'WARN' ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
-                      <AlertTriangle className="w-3 h-3" /> ▲ WARN
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800">
-                      <XCircle className="w-3 h-3" /> ✕ ERROR
-                    </span>
-                  )}
-                </td>
-                <td className="py-2 px-3 text-slate-300">
-                  {comp.details}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="py-2.5 px-3.5 text-[#94A3B8] text-[11px]">
+                    {comp.details}
+                  </td>
+                  <td className="py-2.5 px-3.5 text-right text-[#38BDF8] font-semibold">
+                    {comp.latency_ms !== undefined ? `${comp.latency_ms.toFixed(2)} ms` : '—'}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -1,41 +1,60 @@
+/**
+ * SkyGuard AI — Station Status Component
+ * Displays ACTIVE / DEGRADED / OFFLINE badge with severity dot and text.
+ */
+
 import React from 'react';
-import { StationOperationalStatus } from '../types/api';
+import { StationStatusType } from '../types/api';
 
 interface StationStatusProps {
-  status: StationOperationalStatus | string;
-  showDot?: boolean;
+  status: StationStatusType | string;
+  size?: 'sm' | 'md' | 'lg';
+  showLabel?: boolean;
 }
 
-export const StationStatus: React.FC<StationStatusProps> = ({ status, showDot = true }) => {
-  let colorStyles = 'bg-slate-800 text-slate-300 border-slate-700';
-  let dotColor = 'bg-slate-400';
+export const StationStatus: React.FC<StationStatusProps> = ({
+  status,
+  size = 'md',
+  showLabel = true,
+}) => {
+  const norm = (status || 'ACTIVE').toUpperCase();
 
-  switch (status) {
-    case 'ACTIVE':
-      colorStyles = 'bg-emerald-950/60 text-emerald-400 border-emerald-800/80';
-      dotColor = 'bg-emerald-400';
-      break;
-    case 'DEGRADED':
-      colorStyles = 'bg-amber-950/60 text-amber-400 border-amber-800/80';
-      dotColor = 'bg-amber-400';
-      break;
-    case 'MAINTENANCE':
-      colorStyles = 'bg-indigo-950/60 text-indigo-400 border-indigo-800/80';
-      dotColor = 'bg-indigo-400';
-      break;
-    case 'OFFLINE':
-    case 'DECOMMISSIONED':
-      colorStyles = 'bg-slate-900 text-slate-500 border-slate-800';
-      dotColor = 'bg-slate-600';
-      break;
+  let dotColor = '#10B981'; // Green (Active/Normal)
+  let badgeClass = 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80';
+  let label = 'ACTIVE';
+
+  if (norm === 'DEGRADED' || norm === 'WARNING' || norm === 'ATTENTION') {
+    dotColor = '#F59E0B'; // Amber
+    badgeClass = 'bg-amber-950/70 text-amber-300 border-amber-800/80';
+    label = norm === 'WARNING' ? 'WARNING' : 'DEGRADED';
+  } else if (norm === 'CRITICAL') {
+    dotColor = '#EF4444'; // Red
+    badgeClass = 'bg-red-950/70 text-red-300 border-red-800/80';
+    label = 'CRITICAL';
+  } else if (norm === 'OFFLINE' || norm === 'GAP' || norm === 'DISCONNECTED') {
+    dotColor = '#64748B'; // Gray
+    badgeClass = 'bg-slate-900/90 text-slate-400 border-slate-700/80';
+    label = 'OFFLINE';
   }
+
+  const dotSize = size === 'sm' ? 'w-1.5 h-1.5' : size === 'lg' ? 'w-2.5 h-2.5' : 'w-2 h-2';
+  const textClass =
+    size === 'sm'
+      ? 'text-[10px] px-1.5 py-0.5'
+      : size === 'lg'
+      ? 'text-xs px-2.5 py-1 font-semibold'
+      : 'text-[11px] px-2 py-0.5';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider border ${colorStyles}`}
+      className={`inline-flex items-center gap-1.5 border rounded ${badgeClass} ${textClass} font-mono tracking-wider uppercase select-none`}
     >
-      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />}
-      {status}
+      <span
+        className={`rounded-full shrink-0 ${dotSize}`}
+        style={{ backgroundColor: dotColor }}
+        aria-hidden="true"
+      />
+      {showLabel && <span>{label}</span>}
     </span>
   );
 };

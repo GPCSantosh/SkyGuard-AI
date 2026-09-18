@@ -1,156 +1,199 @@
 /**
- * Telemetry and Meteorological Number Formatting Utilities
- * Prevents excessive floating-point precision leaks and maintains presentation consistency.
- * Underlying raw values are never mutated.
+ * SkyGuard AI — Meteorological & Scientific Formatters
+ * Consistent units, coordinate formatting, relative age, and semantic color lookups.
  */
 
-/**
- * Format ambient or dew point temperature in Celsius (°C).
- * Typically 1 or 2 decimal places.
- */
-export function formatTemperature(
-  val?: number | null,
-  decimals: number = 2,
-  includeUnit: boolean = false
-): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  const formatted = val.toFixed(decimals);
-  return includeUnit ? `${formatted} °C` : formatted;
+import { DecisionSeverity, HybridDecisionType } from '../types/api';
+
+export function formatTemperature(val: number | null | undefined, precision = 1): string {
+  if (val === null || val === undefined || isNaN(val)) return '—';
+  return `${val.toFixed(precision)} °C`;
 }
 
-/**
- * Format relative humidity percentage (%).
- * Typically 1 decimal place or whole integer.
- */
-export function formatHumidity(
-  val?: number | null,
-  decimals: number = 1,
-  includeUnit: boolean = false
-): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  const formatted = val.toFixed(decimals);
-  return includeUnit ? `${formatted}%` : formatted;
+export function formatHumidity(val: number | null | undefined, precision = 1): string {
+  if (val === null || val === undefined || isNaN(val)) return '—';
+  return `${val.toFixed(precision)} %`;
 }
 
-/**
- * Format barometric / atmospheric pressure in hPa.
- * Typically 2 decimal places.
- */
-export function formatPressure(
-  val?: number | null,
-  decimals: number = 2,
-  includeUnit: boolean = false
-): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  const formatted = val.toFixed(decimals);
-  return includeUnit ? `${formatted} hPa` : formatted;
+export function formatPressure(val: number | null | undefined, precision = 1): string {
+  if (val === null || val === undefined || isNaN(val)) return '—';
+  return `${val.toFixed(precision)} hPa`;
 }
 
-/**
- * Format geodetic coordinates to standard geographical precision (4 decimal places).
- */
-export function formatCoordinates(lat?: number | null, lon?: number | null): string {
-  if (lat === null || lat === undefined || lon === null || lon === undefined) return '--';
+export function formatCoordinates(lat: number, lon: number): string {
   const latDir = lat >= 0 ? '°N' : '°S';
   const lonDir = lon >= 0 ? '°E' : '°W';
-  return `${Math.abs(lat).toFixed(4)}${latDir}, ${Math.abs(lon).toFixed(4)}${lonDir}`;
+  return `${Math.abs(lat).toFixed(4)}${latDir}  ${Math.abs(lon).toFixed(4)}${lonDir}`;
 }
 
-/**
- * Format distance in kilometers (km) (1 decimal place).
- */
-export function formatDistance(val?: number | null, includeUnit: boolean = true): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  const formatted = val.toFixed(1);
-  return includeUnit ? `${formatted} km` : formatted;
+export function formatElevation(elevation?: number | null): string {
+  if (elevation === null || elevation === undefined || isNaN(elevation)) return '—';
+  return `el. ${elevation}m`;
 }
 
-/**
- * Format continuous health reliability score (0-100) (integer).
- */
-export function formatHealthScore(val?: number | null): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  return Math.round(val).toString();
-}
-
-/**
- * Format ML anomaly / decision score (0.00 - 1.00) (2 or 3 decimals).
- */
-export function formatScore(val?: number | null, decimals: number = 2): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  return val.toFixed(decimals);
-}
-
-/**
- * Format SHAP feature contribution value with explicit sign.
- */
-export function formatContribution(val?: number | null, decimals: number = 3): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  const sign = val > 0 ? '+' : '';
-  return `${sign}${val.toFixed(decimals)}`;
-}
-
-/**
- * Format latency in milliseconds (ms) (2 decimals).
- */
-export function formatLatency(val?: number | null): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  return `${val.toFixed(2)} ms`;
-}
-
-/**
- * Automatically format a known meteorological parameter by key name.
- */
-export function formatTelemetryValue(
-  paramKey: string,
-  val?: number | null,
-  includeUnit: boolean = true
-): string {
-  const lower = paramKey.toLowerCase();
-  if (lower.includes('temp') || lower.includes('dew')) {
-    return formatTemperature(val, 2, includeUnit);
-  }
-  if (lower.includes('hum') || lower.includes('rh')) {
-    return formatHumidity(val, 1, includeUnit);
-  }
-  if (lower.includes('pres') || lower.includes('slp') || lower.includes('baro')) {
-    return formatPressure(val, 2, includeUnit);
-  }
-  if (lower.includes('lat') || lower.includes('lon')) {
-    return val !== null && val !== undefined ? val.toFixed(4) : '--';
-  }
-  if (lower.includes('elev')) {
-    return val !== null && val !== undefined ? `${Math.round(val)} m` : '--';
-  }
-  if (typeof val === 'number') {
-    return val.toFixed(2);
-  }
-  return String(val ?? '--');
-}
-
-/**
- * Format ISO 8601 UTC timestamp for display.
- */
-export function formatIsoUtc(timestamp?: string | null, includeSeconds: boolean = true): string {
-  if (!timestamp) return '--';
+export function formatUtcTime(timestamp?: string | null): string {
+  if (!timestamp) return '—';
   try {
     const d = new Date(timestamp);
-    if (isNaN(d.getTime())) return String(timestamp);
-    const iso = d.toISOString();
-    return includeSeconds
-      ? iso.replace('T', ' ').substring(0, 19) + ' UTC'
-      : iso.replace('T', ' ').substring(0, 16) + ' UTC';
+    if (isNaN(d.getTime())) return timestamp;
+    return (
+      d.toISOString().replace('T', ' ').substring(11, 19) + ' UTC'
+    );
   } catch {
-    return String(timestamp);
+    return timestamp;
   }
 }
 
-/**
- * Format elapsed time / age in seconds to human operational format.
- */
-export function formatAge(seconds?: number | null): string {
-  if (seconds === null || seconds === undefined || isNaN(seconds)) return '--';
-  if (seconds < 60) return `${Math.round(seconds)}s ago`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)}m ago`;
-  return `${(seconds / 3600).toFixed(1)}h ago`;
+export function formatUtcDate(timestamp?: string | null): string {
+  if (!timestamp) return '—';
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return timestamp;
+    return d.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+  } catch {
+    return timestamp;
+  }
+}
+
+export function formatRelativeAge(seconds?: number | null): string {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '—';
+  if (seconds < 60) return `${Math.floor(seconds)}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+export function getSeverityStyle(severity: DecisionSeverity): {
+  bg: string;
+  text: string;
+  border: string;
+  dot: string;
+  accentBorder: string;
+} {
+  switch (severity) {
+    case 'CRITICAL':
+      return {
+        bg: 'bg-[#450A0A]',
+        text: 'text-[#FCA5A5]',
+        border: 'border-[#7F1D1D]',
+        dot: '#EF4444',
+        accentBorder: 'border-l-[#EF4444]',
+      };
+    case 'HIGH':
+      return {
+        bg: 'bg-[#431407]',
+        text: 'text-[#FDBA74]',
+        border: 'border-[#7C2D12]',
+        dot: '#F97316',
+        accentBorder: 'border-l-[#F97316]',
+      };
+    case 'MEDIUM':
+      return {
+        bg: 'bg-[#451A03]',
+        text: 'text-[#FDE68A]',
+        border: 'border-[#78350F]',
+        dot: '#F59E0B',
+        accentBorder: 'border-l-[#F59E0B]',
+      };
+    case 'LOW':
+      return {
+        bg: 'bg-[#0C1A28]',
+        text: 'text-[#7DD3FC]',
+        border: 'border-[#164E63]',
+        dot: '#38BDF8',
+        accentBorder: 'border-l-[#38BDF8]',
+      };
+    case 'INFO':
+    default:
+      return {
+        bg: 'bg-[#0F172A]',
+        text: 'text-[#94A3B8]',
+        border: 'border-[#334155]',
+        dot: '#64748B',
+        accentBorder: 'border-l-[#64748B]',
+      };
+  }
+}
+
+export function getDecisionBadge(decision: HybridDecisionType): {
+  label: string;
+  color: string;
+  badgeClass: string;
+} {
+  switch (decision) {
+    case 'PROBABLE_SENSOR_ANOMALY':
+      return {
+        label: 'PROBABLE_SENSOR_ANOMALY',
+        color: '#EF4444',
+        badgeClass: 'bg-red-950/80 text-red-300 border-red-800/80',
+      };
+    case 'PROBABLE_DATA_QUALITY_ISSUE':
+      return {
+        label: 'PROBABLE_DATA_QUALITY_ISSUE',
+        color: '#F97316',
+        badgeClass: 'bg-orange-950/80 text-orange-300 border-orange-800/80',
+      };
+    case 'POSSIBLE_GENUINE_EVENT':
+      return {
+        label: 'POSSIBLE_GENUINE_EVENT',
+        color: '#6366F1',
+        badgeClass: 'bg-indigo-950/80 text-indigo-300 border-indigo-800/80',
+      };
+    case 'UNCERTAIN':
+      return {
+        label: 'UNCERTAIN',
+        color: '#EC4899',
+        badgeClass: 'bg-pink-950/80 text-pink-300 border-pink-800/80',
+      };
+    case 'NORMAL':
+    default:
+      return {
+        label: 'NORMAL',
+        color: '#10B981',
+        badgeClass: 'bg-emerald-950/80 text-emerald-300 border-emerald-800/80',
+      };
+  }
+}
+
+export function getHealthBand(score: number): {
+  label: 'HEALTHY' | 'GOOD' | 'ATTENTION' | 'DEGRADED' | 'CRITICAL';
+  color: string;
+  badgeClass: string;
+} {
+  if (score >= 90) {
+    return {
+      label: 'HEALTHY',
+      color: '#10B981',
+      badgeClass: 'bg-emerald-950/70 text-emerald-400 border-emerald-800/70',
+    };
+  }
+  if (score >= 75) {
+    return {
+      label: 'GOOD',
+      color: '#34D399',
+      badgeClass: 'bg-emerald-950/50 text-emerald-300 border-emerald-800/50',
+    };
+  }
+  if (score >= 60) {
+    return {
+      label: 'ATTENTION',
+      color: '#F59E0B',
+      badgeClass: 'bg-amber-950/70 text-amber-300 border-amber-800/70',
+    };
+  }
+  if (score >= 40) {
+    return {
+      label: 'DEGRADED',
+      color: '#F97316',
+      badgeClass: 'bg-orange-950/80 text-orange-300 border-orange-800/80',
+    };
+  }
+  return {
+    label: 'CRITICAL',
+    color: '#EF4444',
+    badgeClass: 'bg-red-950/80 text-red-300 border-red-800/80',
+  };
 }

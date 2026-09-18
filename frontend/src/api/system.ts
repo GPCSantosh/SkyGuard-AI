@@ -1,77 +1,40 @@
-import { apiClient } from './client';
-import {
-  SystemHealthStatus,
-  ReplayStatus,
-  ReplayScenario,
-  LiveSourceHealthSummary,
-} from '../types/api';
+/**
+ * SkyGuard AI — System Diagnostics & Subsystems API Service
+ * Authoritative endpoints:
+ * - GET /api/v1/system/health
+ * - GET /api/v1/live/status
+ * - POST /api/v1/live/poll-now
+ */
 
-export async function fetchSystemHealth(): Promise<SystemHealthStatus> {
-  return apiClient<SystemHealthStatus>('/system/health');
-}
+import { apiClient, USE_MOCK_DATA } from './client';
+import { SystemHealthStatus } from '../types/api';
+import { MOCK_SYSTEM_HEALTH } from '../mock/mockSystem';
 
-export async function fetchReplayStatus(): Promise<ReplayStatus> {
-  return apiClient<ReplayStatus>('/replay/status');
-}
+export const systemApi = {
+  async getSystemHealth(): Promise<SystemHealthStatus> {
+    if (USE_MOCK_DATA) {
+      return { ...MOCK_SYSTEM_HEALTH };
+    }
+    return apiClient.get<SystemHealthStatus>('/system/health');
+  },
 
-export async function fetchReplayScenarios(): Promise<ReplayScenario[]> {
-  return apiClient<ReplayScenario[]>('/replay/scenarios');
-}
+  async getLiveStatus(): Promise<{ status: string; operational_mode: string; active_source: string }> {
+    if (USE_MOCK_DATA) {
+      return {
+        status: 'OPERATIONAL',
+        operational_mode: 'DEMO / SYNTHETIC VALIDATION',
+        active_source: 'SYNTHETIC_REPLAY_ENGINE',
+      };
+    }
+    return apiClient.get<{ status: string; operational_mode: string; active_source: string }>(
+      '/live/status'
+    );
+  },
 
-export async function loadReplayScenario(scenarioId: string): Promise<{
-  status: string;
-  loaded_scenario_id: string;
-  total_observations: number;
-  current_index: number;
-}> {
-  return apiClient('/replay/load-scenario', {
-    method: 'POST',
-    body: JSON.stringify({ scenario_id: scenarioId }),
-  });
-}
-
-export async function resetReplaySimulation(): Promise<{
-  status: string;
-  current_index: number;
-  emitted_count: number;
-  current_scenario_id: string;
-  database_preserved: boolean;
-}> {
-  return apiClient('/replay/reset', {
-    method: 'POST',
-  });
-}
-
-export async function stepReplaySimulation(count: number = 1): Promise<{
-  mode: string;
-  steps_executed: number;
-  current_index: number;
-  total_emitted: number;
-  results_summary: Array<{
-    station_id: string;
-    timestamp: string;
-    status: string;
-    decision: string | null;
-    event_id: string | null;
-  }>;
-}> {
-  return apiClient(`/replay/step?count=${count}`, {
-    method: 'POST',
-  });
-}
-
-export async function fetchLiveSourceHealth(): Promise<LiveSourceHealthSummary> {
-  return apiClient<LiveSourceHealthSummary>('/live/source-health');
-}
-
-export async function triggerLivePoll(): Promise<{
-  status: string;
-  stations_polled: number;
-  observations_ingested: number;
-  poll_duration_ms?: number;
-  source_state: string;
-}> {
-  return apiClient('/live/poll-now', {
-    method: 'POST',
-  });
-}
+  async triggerImmediatePoll(): Promise<{ status: string; stations_polled: number }> {
+    if (USE_MOCK_DATA) {
+      return { status: 'OK', stations_polled: 8 };
+    }
+    return apiClient.post<{ status: string; stations_polled: number }>('/live/poll-now');
+  },
+};

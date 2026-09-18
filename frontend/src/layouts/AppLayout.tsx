@@ -1,28 +1,23 @@
+/**
+ * SkyGuard AI — Master Application Layout
+ * Top Command Bar navigation model without permanent sidebars.
+ * Centers fluid analytical workspaces, scientific toolbars, and responsive panels.
+ */
+
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { TopBar } from './TopBar';
-import { Sidebar } from './Sidebar';
-import { useRealtimeStream } from '../hooks/useRealtimeStream';
-import { DegradedModeBanner } from '../components/StateFeedback';
+import { TopCommandBar } from './TopCommandBar';
 
 export const AppLayout: React.FC = () => {
-  const { isDegraded } = useRealtimeStream();
-
   return (
-    <div className="h-screen w-screen flex flex-col bg-canvas text-slate-100 overflow-hidden">
-      {/* 40px Top Operations Bar */}
-      <TopBar />
+    <div className="flex flex-col min-h-screen w-screen bg-[#070B12] text-[#F8FAFC]">
+      {/* Top Command Bar */}
+      <TopCommandBar />
 
-      {/* Optional Degraded Mode Alert Banner */}
-      {isDegraded && <DegradedModeBanner />}
-
-      {/* Main App Workspace: Sidebar + Scrollable View Canvas */}
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto p-4 bg-canvas">
-          <Outlet />
-        </main>
-      </div>
+      {/* Main Full-Width Analytical Workspace */}
+      <main className="flex-1 w-full max-w-[1920px] mx-auto p-3 sm:p-4 md:p-5 overflow-x-hidden">
+        <Outlet />
+      </main>
     </div>
   );
 };

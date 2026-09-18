@@ -1,8 +1,17 @@
 /**
- * Base API client with standardized error handling and configuration.
+ * SkyGuard AI — Centralized REST API Client
+ * Configurable base URL, typed error handling, and transparent mock adapter switching.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+export const WS_BASE_URL =
+  import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/stream';
+
+// If VITE_USE_MOCK_DATA is not explicitly 'false', default to true for immediate local execution
+export const USE_MOCK_DATA =
+  import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 
 export class ApiError extends Error {
   status: number;
@@ -16,40 +25,81 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+
+  const headers = new Headers(options.headers || {});
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+  headers.set('Accept', 'application/json');
+
   try {
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
       ...options,
+      headers,
     });
 
     if (!response.ok) {
-      let errorData;
+      let errorBody: unknown;
       try {
-        errorData = await response.json();
+        errorBody = await response.json();
       } catch {
-        errorData = await response.text();
+        errorBody = await response.text();
       }
       throw new ApiError(
-        typeof errorData === 'object' && errorData && 'detail' in errorData
-          ? String((errorData as { detail: unknown }).detail)
-          : `HTTP ${response.status}: ${response.statusText}`,
+        `HTTP ${response.status}: ${response.statusText}`,
         response.status,
-        errorData
+        errorBody
       );
     }
 
-    return (await response.json()) as T;
-  } catch (err: unknown) {
-    if (err instanceof ApiError) {
-      throw err;
+    // Return empty object on 204 No Content
+    if (response.status === 204) {
+      return {} as T;
     }
-    const message = err instanceof Error ? err.message : 'Unknown network failure';
-    throw new ApiError(`Network connection error: ${message}`, 0);
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(
+      error instanceof Error ? error.message : 'Network request failed',
+      0,
+      error
+    );
   }
 }
+
+export const apiClient = {
+  get: <T>(endpoint: string, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: 'GET' }),
+
+  post: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
+    request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+
+  put: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
+    request<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+
+  patch: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
+    request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+
+  delete: <T>(endpoint: string, options?: RequestInit) =>
+    request<T>(endpoint, { ...options, method: 'DELETE' }),
+};

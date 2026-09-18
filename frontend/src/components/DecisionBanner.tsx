@@ -1,130 +1,90 @@
+/**
+ * SkyGuard AI — Decision Banner Component
+ * Flagship sticky decision banner with trigger codes, severity accent, and provenance metadata.
+ */
+
 import React from 'react';
-import { HybridDecisionType, AlertSeverity } from '../types/api';
+import { HybridDecisionType, DecisionSeverity } from '../types/api';
 import { SeverityBadge } from './SeverityBadge';
-import { formatIsoUtc } from '../utils/formatters';
-import { ShieldAlert, CheckCircle2, CloudLightning, HelpCircle, AlertTriangle } from 'lucide-react';
+import { getDecisionBadge, formatUtcTime } from '../utils/formatters';
 
 interface DecisionBannerProps {
-  decision: HybridDecisionType | string;
-  severity: AlertSeverity | string;
-  reasonCodes?: string[];
-  stationId?: string;
-  timestamp?: string;
-  isDegradedMode?: boolean;
-  durationMinutes?: number | null;
-  modelVersion?: string;
+  decision: HybridDecisionType;
+  severity: DecisionSeverity;
+  stationId: string;
+  stationName?: string;
+  timestamp: string;
+  durationMinutes?: number;
   engineVersion?: string;
+  modelVersion?: string;
   explanationMethod?: string;
-  isSticky?: boolean;
+  triggerCodes?: string[];
+  summary?: string;
 }
 
 export const DecisionBanner: React.FC<DecisionBannerProps> = ({
   decision,
   severity,
-  reasonCodes = [],
   stationId,
+  stationName,
   timestamp,
-  isDegradedMode = false,
   durationMinutes,
-  modelVersion = 'isolation_forest_v1',
   engineVersion = 'hybrid_v1.0.0',
+  modelVersion = 'isolation_forest_v1',
   explanationMethod = 'TREE_SHAP',
-  isSticky = false,
+  triggerCodes = [],
+  summary,
 }) => {
-  let title = 'NOMINAL METEOROLOGICAL STATE';
-  let bannerBorder = 'border-slate-700 bg-surface-1';
-  let Icon = CheckCircle2;
-  let iconColor = 'text-emerald-400';
-  let leftBorderAccent = 'border-l-4 border-l-emerald-500';
+  const decStyle = getDecisionBadge(decision);
 
-  switch (decision) {
-    case 'NORMAL':
-      title = 'NOMINAL OBSERVATION — QC PASSED';
-      bannerBorder = 'border-emerald-800/60 bg-emerald-950/20';
-      Icon = CheckCircle2;
-      iconColor = 'text-emerald-400';
-      leftBorderAccent = 'border-l-4 border-l-emerald-500';
-      break;
-    case 'POSSIBLE_GENUINE_EVENT':
-      title = 'POSSIBLE GENUINE WEATHER EVENT';
-      bannerBorder = 'border-indigo-700/70 bg-indigo-950/30';
-      Icon = CloudLightning;
-      iconColor = 'text-indigo-400';
-      leftBorderAccent = 'border-l-4 border-l-indigo-500';
-      break;
-    case 'PROBABLE_SENSOR_ANOMALY':
-      title = 'PROBABLE SENSOR ANOMALY';
-      bannerBorder = 'border-red-800/70 bg-red-950/30';
-      Icon = ShieldAlert;
-      iconColor = 'text-red-400';
-      leftBorderAccent = 'border-l-4 border-l-red-500';
-      break;
-    case 'PROBABLE_DATA_QUALITY_ISSUE':
-      title = 'PROBABLE DATA QUALITY / TRANSMISSION ISSUE';
-      bannerBorder = 'border-amber-800/70 bg-amber-950/30';
-      Icon = AlertTriangle;
-      iconColor = 'text-amber-400';
-      leftBorderAccent = 'border-l-4 border-l-amber-500';
-      break;
-    case 'UNCERTAIN':
-      title = 'UNCERTAIN OBSERVATION — OPERATOR REVIEW RECOMMENDED';
-      bannerBorder = 'border-fuchsia-800/70 bg-fuchsia-950/30';
-      Icon = HelpCircle;
-      iconColor = 'text-fuchsia-400';
-      leftBorderAccent = 'border-l-4 border-l-fuchsia-500';
-      break;
-  }
-
-  const stickyClasses = isSticky
-    ? 'sticky top-0 z-20 shadow-md backdrop-blur-md bg-surface-1/95'
-    : '';
+  const borderAccentColor =
+    severity === 'CRITICAL'
+      ? 'border-l-red-500'
+      : severity === 'HIGH'
+      ? 'border-l-orange-500'
+      : severity === 'MEDIUM'
+      ? 'border-l-amber-500'
+      : 'border-l-sky-500';
 
   return (
-    <div className={`p-4 rounded border ${bannerBorder} ${leftBorderAccent} ${stickyClasses} transition-all`}>
-      {/* Row 1 & 2: Primary Operational Decision & Metadata */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded bg-surface-2 border border-border-subtle ${iconColor} flex-shrink-0`}>
-            <Icon className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-h2 font-bold tracking-wide text-slate-100">{title}</span>
-              <SeverityBadge severity={severity} />
-              {isDegradedMode && (
-                <span className="px-1.5 py-0.5 text-[10px] font-mono uppercase bg-amber-950 text-amber-300 border border-amber-800 rounded">
-                  Degraded Mode
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3 mt-1 text-[11px] font-mono text-slate-400 flex-wrap">
-              {stationId && (
-                <span>
-                  Station: <strong className="text-slate-200">{stationId}</strong>
-                </span>
-              )}
-              {timestamp && (
-                <span>
-                  Timestamp: <strong className="text-slate-300">{formatIsoUtc(timestamp)}</strong>
-                </span>
-              )}
-              {durationMinutes !== undefined && durationMinutes !== null && (
-                <span>
-                  Duration: <strong className="text-slate-200">{durationMinutes.toFixed(0)} min</strong>
-                </span>
-              )}
-            </div>
-          </div>
+    <div
+      className={`w-full bg-[#111827] border border-[#2D3748] border-l-4 ${borderAccentColor} p-3.5 rounded shadow-sm`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-[#2D3748]/60">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span
+            className="text-xs font-mono font-semibold px-2 py-0.5 rounded border"
+            style={{
+              borderColor: `${decStyle.color}50`,
+              backgroundColor: `${decStyle.color}15`,
+              color: decStyle.color,
+            }}
+          >
+            {decision.replace(/_/g, ' ')}
+          </span>
+          <SeverityBadge severity={severity} />
+          <span className="text-xs text-[#94A3B8]">
+            Station <strong className="text-[#F8FAFC] font-mono">{stationId}</strong>
+            {stationName && <span className="ml-1 text-[#64748B]">({stationName})</span>}
+          </span>
+          <span className="text-xs text-[#64748B]">·</span>
+          <span className="text-xs font-mono text-[#94A3B8]">{formatUtcTime(timestamp)}</span>
+          {durationMinutes !== undefined && (
+            <span className="text-xs text-amber-400 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded font-mono">
+              Duration: {durationMinutes} min active
+            </span>
+          )}
         </div>
 
-        {/* Reason Codes / Triggers */}
-        {reasonCodes.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 max-w-md">
-            <span className="text-[10px] text-slate-400 uppercase font-mono mr-1">Triggers:</span>
-            {reasonCodes.map((code) => (
+        {triggerCodes.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] uppercase font-mono text-[#64748B] tracking-wider">
+              TRIGGERS:
+            </span>
+            {triggerCodes.map((code) => (
               <span
                 key={code}
-                className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-surface-2 text-slate-300 border border-border"
+                className="text-[10px] font-mono bg-[#1A2234] text-[#94A3B8] border border-[#2D3748] px-1.5 py-0.5 rounded"
               >
                 {code}
               </span>
@@ -133,12 +93,27 @@ export const DecisionBanner: React.FC<DecisionBannerProps> = ({
         )}
       </div>
 
-      {/* Row 3: Engine Provenance (De-emphasized / Muted) */}
-      <div className="mt-2.5 pt-2 border-t border-border-subtle/50 flex flex-wrap items-center justify-between text-[10px] font-mono text-slate-500">
-        <div>
-          Engine: <span className="text-slate-400">{engineVersion}</span> | Model: <span className="text-slate-400">{modelVersion}</span> | Method: <span className="text-slate-400">{explanationMethod}</span>
+      {summary && (
+        <p className="text-[13px] text-[#F8FAFC] mt-2.5 leading-relaxed">
+          {summary}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-[#2D3748]/40 text-[11px] font-mono text-[#64748B]">
+        <div className="flex items-center gap-3">
+          <span>
+            engine: <span className="text-[#94A3B8]">{engineVersion}</span>
+          </span>
+          <span>·</span>
+          <span>
+            model: <span className="text-[#94A3B8]">{modelVersion}</span>
+          </span>
+          <span>·</span>
+          <span>
+            method: <span className="text-[#94A3B8]">{explanationMethod}</span>
+          </span>
         </div>
-        <div className="text-slate-500">
+        <div className="text-[#64748B]">
           SkyGuard AI Mission Control · Calibrated Anomaly Inference
         </div>
       </div>

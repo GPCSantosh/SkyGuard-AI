@@ -58,6 +58,15 @@ def load_fixture(filename: str) -> Dict[str, Any]:
     with open(FIXTURES_DIR / filename, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def make_fresh_fixture(data: Dict[str, Any]) -> Dict[str, Any]:
+    fresh = json.loads(json.dumps(data))
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    timestamp = now.isoformat().replace("+00:00", "Z")
+
+    fresh["_provenance"]["retrieved_at_utc"] = timestamp
+    fresh["current"]["time"] = timestamp
+
+    return fresh
 
 @pytest.fixture
 def mock_topology() -> SpatialNetworkTopology:
@@ -146,7 +155,7 @@ async def test_scenario_b_multiple_stations_polling(mock_topology):
 # C & V. Station-specific failure isolation & multi-station isolation
 @pytest.mark.anyio
 async def test_scenario_c_and_v_station_failure_isolation(mock_topology):
-    fixture_data = load_fixture("01_valid_observation.json")
+    fixture_data = make_fresh_fixture(load_fixture("01_valid_observation.json"))
 
     def selective_fetcher(url: str, timeout: float):
         # Fail Mumbai, pass Delhi and Pune

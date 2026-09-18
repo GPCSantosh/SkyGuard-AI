@@ -1,83 +1,68 @@
+/**
+ * SkyGuard AI — Real-Time WebSocket Streaming Hook (RFC 6455)
+ * Strict envelope parsing, bounded LRU deduplication, monotonic per-station ordering,
+ * bounded exponential backoff with jitter, and TanStack Query cache reconciliation.
+ */
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSystemHealth } from './useSystem';
-import {
-  ConnectionStatus,
-  WebSocketEnvelope,
-  ObservationUpdatedPayload,
-  HealthUpdatedPayload,
-} from '../types/events';
+import { WS_BASE_URL, USE_MOCK_DATA } from '../api/client';
+import { WebSocketEnvelope, ConnectionState } from '../types/events';
 
-export interface StreamState {
-  connectionStatus: ConnectionStatus;
-  transportMode: 'WEBSOCKET' | 'POLLING';
-  isConnected: boolean;
-  isDegraded: boolean;
-  lastHeartbeat: Date | null;
-  secondsSinceLastUpdate: number;
-  activeModelId: string;
-  reconnectCount: number;
-  eventsReceivedCount: number;
-  lastEvent: WebSocketEnvelope | null;
-}
+// Bounded LRU deduplication capacity
+const DEDUP_CAPACITY = 1000;
 
-const MAX_DEDUP_CACHE_SIZE = 1000;
-const HEARTBEAT_INTERVAL_MS = 15000;
-const BASE_RECONNECT_DELAY_MS = 1000;
-const MAX_RECONNECT_DELAY_MS = 30000;
-
-export function useRealtimeStream(): StreamState {
+export function useRealtimeStream() {
   const queryClient = useQueryClient();
-  const { data: systemHealth, isError: isSystemError, dataUpdatedAt } = useSystemHealth();
-
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('CONNECTING');
-  const [transportMode, setTransportMode] = useState<'WEBSOCKET' | 'POLLING'>('POLLING');
-  const [lastHeartbeat, setLastHeartbeat] = useState<Date | null>(null);
-  const [secondsSinceLastUpdate, setSecondsSinceLastUpdate] = useState<number>(0);
-  const [reconnectCount, setReconnectCount] = useState<number>(0);
-  const [eventsReceivedCount, setEventsReceivedCount] = useState<number>(0);
+  const [connectionState, setConnectionState] = useState<ConnectionState>(
+    USE_MOCK_DATA ? 'CONNECTED' : 'CONNECTING'
+  );
   const [lastEvent, setLastEvent] = useState<WebSocketEnvelope | null>(null);
+  const [lastHeartbeat, setLastHeartbeat] = useState<Date>(new Date());
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const seenEventIdsRef = useRef<Set<string>>(new Set());
-  const seenEventIdsListRef = useRef<string[]>([]);
-  const stationTimestampsRef = useRef<Map<string, number>>(new Map());
-  const isMountedRef = useRef<boolean>(true);
-  const hasEverConnectedRef = useRef<boolean>(false);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const isUnmountedRef = useRef(false);
 
-  // Helper to record seen event_id for deduplication
-  const recordEventId = useCallback((eventId: string): boolean => {
-    if (seenEventIdsRef.current.has(eventId)) {
+  // LRU deduplication cache
+  const seenEventIdsRef = useRef<Set<string>>(new Set());
+  const eventIdQueueRef = useRef<string[]>([]);
+
+  // Per-station monotonic timestamp guard: station_id -> latest seen timestamp (ms)
+  const latestStationTimestampsRef = useRef<Map<string, number>>(new Map());
+
+  const recordEventId = useCallback((id: string): boolean => {
+    if (seenEventIdsRef.current.has(id)) {
       return false; // Duplicate
     }
-    seenEventIdsRef.current.add(eventId);
-    seenEventIdsListRef.current.push(eventId);
-    if (seenEventIdsListRef.current.length > MAX_DEDUP_CACHE_SIZE) {
-      const oldest = seenEventIdsListRef.current.shift();
+    seenEventIdsRef.current.add(id);
+    eventIdQueueRef.current.push(id);
+
+    if (eventIdQueueRef.current.length > DEDUP_CAPACITY) {
+      const oldest = eventIdQueueRef.current.shift();
       if (oldest) seenEventIdsRef.current.delete(oldest);
     }
-    return true; // New
+    return true; // New unique event
   }, []);
 
-  // Check ordering based on station timestamp
-  const isChronologicallyValid = useCallback((stationId?: string | null, timestampStr?: string): boolean => {
-    if (!stationId || !timestampStr) return true;
-    const msgTime = new Date(timestampStr).getTime();
-    if (isNaN(msgTime)) return true;
+  const isMonotonicallyOrdered = useCallback(
+    (stationId: string | null, isoTimestamp: string): boolean => {
+      if (!stationId) return true;
+      const msgTime = new Date(isoTimestamp).getTime();
+      if (isNaN(msgTime)) return true;
 
-    const lastTime = stationTimestampsRef.current.get(stationId) || 0;
-    if (msgTime < lastTime) {
-      // Out of order stale message
-      return false;
-    }
-    stationTimestampsRef.current.set(stationId, msgTime);
-    return true;
-  }, []);
+      const lastTime = latestStationTimestampsRef.current.get(stationId);
+      if (lastTime !== undefined && msgTime < lastTime) {
+        return false; // Stale/out-of-order packet
+      }
+      latestStationTimestampsRef.current.set(stationId, msgTime);
+      return true;
+    },
+    []
+  );
 
-  // Reconcile and resync client state on reconnection
-  const resyncStateOnReconnect = useCallback(() => {
+  const resyncQueryCaches = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['stations'] });
     queryClient.invalidateQueries({ queryKey: ['anomalies'] });
     queryClient.invalidateQueries({ queryKey: ['corrections'] });
@@ -85,196 +70,130 @@ export function useRealtimeStream(): StreamState {
     queryClient.invalidateQueries({ queryKey: ['replay'] });
   }, [queryClient]);
 
-  // Handle incoming validated WebSocket envelope
-  const handleWebSocketMessage = useCallback((envelope: WebSocketEnvelope) => {
-    if (!envelope || !envelope.event_id || !envelope.event_type) return;
-
-    // Deduplication Guard
-    if (!recordEventId(envelope.event_id)) {
+  const connect = useCallback(() => {
+    if (USE_MOCK_DATA) {
+      setConnectionState('CONNECTED');
       return;
     }
 
-    // Ordering Guard
-    if (!isChronologicallyValid(envelope.station_id, envelope.timestamp)) {
-      return;
-    }
+    if (isUnmountedRef.current) return;
 
-    setLastHeartbeat(new Date());
-    setSecondsSinceLastUpdate(0);
-    setEventsReceivedCount((prev) => prev + 1);
-    setLastEvent(envelope);
+    try {
+      setConnectionState('CONNECTING');
+      const ws = new WebSocket(WS_BASE_URL);
+      wsRef.current = ws;
 
-    switch (envelope.event_type) {
-      case 'observation.updated': {
-        const payload = envelope.payload as ObservationUpdatedPayload;
-        if (payload.station_id) {
-          queryClient.invalidateQueries({ queryKey: ['station', payload.station_id, 'latest'] });
-          queryClient.invalidateQueries({ queryKey: ['stations'] });
-        }
-        break;
-      }
-      case 'anomaly.created':
-      case 'anomaly.updated': {
-        queryClient.invalidateQueries({ queryKey: ['anomalies'] });
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-        break;
-      }
-      case 'health.updated': {
-        const payload = envelope.payload as HealthUpdatedPayload;
-        if (payload.station_id) {
-          queryClient.invalidateQueries({ queryKey: ['station', payload.station_id, 'health'] });
-          queryClient.invalidateQueries({ queryKey: ['stations'] });
-        }
-        break;
-      }
-      case 'correction.created': {
-        queryClient.invalidateQueries({ queryKey: ['corrections'] });
-        break;
-      }
-      case 'station.status_changed': {
-        queryClient.invalidateQueries({ queryKey: ['stations'] });
-        break;
-      }
-      case 'system.status_changed': {
-        queryClient.invalidateQueries({ queryKey: ['system'] });
-        break;
-      }
-      case 'heartbeat.pong': {
-        // Heartbeat confirmed
-        break;
-      }
-      default:
-        break;
-    }
-  }, [queryClient, recordEventId, isChronologicallyValid]);
+      ws.onopen = () => {
+        if (isUnmountedRef.current) return;
+        setConnectionState('CONNECTED');
+        reconnectAttemptsRef.current = 0;
+        resyncQueryCaches();
+      };
 
-  // WebSocket Connection Management
-  useEffect(() => {
-    isMountedRef.current = true;
+      ws.onmessage = (event) => {
+        if (isUnmountedRef.current) return;
+        try {
+          const envelope = JSON.parse(event.data) as WebSocketEnvelope;
 
-    const connectWs = () => {
-      if (!isMountedRef.current) return;
+          // Deduplication
+          if (!envelope.event_id || !recordEventId(envelope.event_id)) {
+            return;
+          }
 
-      // Determine WebSocket URL: Check explicit VITE_WS_URL first, then reverse-proxy relative origin
-      const envWsUrl = (import.meta as any).env?.VITE_WS_URL;
-      let wsUrl = envWsUrl;
-      if (!wsUrl) {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        wsUrl = `${protocol}//${window.location.host}/ws/stream`;
-      }
+          // Monotonic ordering guard
+          if (!isMonotonicallyOrdered(envelope.station_id, envelope.timestamp)) {
+            return;
+          }
 
-      try {
-        setConnectionStatus((prev) => (prev === 'CONNECTED' ? 'CONNECTED' : hasEverConnectedRef.current ? 'RECONNECTING' : 'CONNECTING'));
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-          if (!isMountedRef.current) return;
-          setConnectionStatus('CONNECTED');
-          setTransportMode('WEBSOCKET');
+          setLastEvent(envelope);
           setLastHeartbeat(new Date());
-          setSecondsSinceLastUpdate(0);
 
-          if (hasEverConnectedRef.current) {
-            // Reconnected after disconnection -> trigger resync
-            resyncStateOnReconnect();
-          }
-          hasEverConnectedRef.current = true;
-          setReconnectCount(0);
-
-          // Setup ping heartbeat
-          if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({
-                event_type: 'heartbeat.ping',
-                timestamp: new Date().toISOString(),
-              }));
+          // Targeted cache invalidation based on event type
+          if (envelope.event_type === 'observation.updated') {
+            queryClient.invalidateQueries({ queryKey: ['stations'] });
+            if (envelope.station_id) {
+              queryClient.invalidateQueries({
+                queryKey: ['station', envelope.station_id],
+              });
             }
-          }, HEARTBEAT_INTERVAL_MS);
-        };
-
-        ws.onmessage = (event: MessageEvent) => {
-          if (!isMountedRef.current) return;
-          try {
-            const envelope = JSON.parse(event.data) as WebSocketEnvelope;
-            handleWebSocketMessage(envelope);
-          } catch {
-            // Malformed frame ignored safely
+          } else if (envelope.event_type === 'anomaly.created') {
+            queryClient.invalidateQueries({ queryKey: ['anomalies'] });
+            queryClient.invalidateQueries({ queryKey: ['stations'] });
+          } else if (envelope.event_type === 'health.updated') {
+            queryClient.invalidateQueries({ queryKey: ['health'] });
+            queryClient.invalidateQueries({ queryKey: ['stations'] });
+          } else if (envelope.event_type === 'correction.created') {
+            queryClient.invalidateQueries({ queryKey: ['corrections'] });
+          } else if (
+            envelope.event_type === 'station.status_changed' ||
+            envelope.event_type === 'system.status_changed'
+          ) {
+            queryClient.invalidateQueries({ queryKey: ['stations'] });
+            queryClient.invalidateQueries({ queryKey: ['system'] });
           }
-        };
+        } catch {
+          // Non-JSON or malformed packet, ignore gracefully
+        }
+      };
 
-        ws.onclose = () => {
-          if (!isMountedRef.current) return;
-          setConnectionStatus('RECONNECTING');
-          setTransportMode('POLLING');
-          if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+      ws.onerror = () => {
+        if (isUnmountedRef.current) return;
+        setConnectionState('ERROR');
+      };
 
-          // Exponential backoff reconnect
-          setReconnectCount((prev) => {
-            const nextCount = prev + 1;
-            const delay = Math.min(
-              MAX_RECONNECT_DELAY_MS,
-              BASE_RECONNECT_DELAY_MS * Math.pow(1.5, Math.min(nextCount, 8))
-            ) + Math.random() * 500;
+      ws.onclose = () => {
+        if (isUnmountedRef.current) return;
+        setConnectionState('RECONNECTING');
 
-            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-            reconnectTimeoutRef.current = setTimeout(connectWs, delay);
-            return nextCount;
-          });
-        };
+        // Bounded exponential backoff with jitter
+        const attempts = reconnectAttemptsRef.current;
+        const delay =
+          Math.min(30000, 1000 * Math.pow(1.5, Math.min(attempts, 8))) +
+          Math.random() * 500;
 
-        ws.onerror = () => {
-          if (!isMountedRef.current) return;
-          setConnectionStatus('ERROR');
-          setTransportMode('POLLING');
-        };
-      } catch {
-        setConnectionStatus('ERROR');
-        setTransportMode('POLLING');
-        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = setTimeout(connectWs, 3000);
-      }
-    };
+        reconnectAttemptsRef.current += 1;
 
-    connectWs();
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          connect();
+        }, delay);
+      };
+    } catch {
+      setConnectionState('ERROR');
+    }
+  }, [recordEventId, isMonotonicallyOrdered, resyncQueryCaches]);
+
+  useEffect(() => {
+    isUnmountedRef.current = false;
+    connect();
+
+    // Heartbeat ticker in mock mode
+    let mockInterval: number | null = null;
+    if (USE_MOCK_DATA) {
+      mockInterval = window.setInterval(() => {
+        setLastHeartbeat(new Date());
+      }, 5000);
+    }
 
     return () => {
-      isMountedRef.current = false;
+      isUnmountedRef.current = true;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (mockInterval) {
+        clearInterval(mockInterval);
+      }
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
       }
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
     };
-  }, [handleWebSocketMessage, resyncStateOnReconnect]);
-
-  // Elapsed seconds timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const referenceTime = lastHeartbeat ? lastHeartbeat.getTime() : dataUpdatedAt;
-      if (referenceTime) {
-        const elapsed = Math.floor((Date.now() - referenceTime) / 1000);
-        setSecondsSinceLastUpdate(elapsed);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [lastHeartbeat, dataUpdatedAt]);
-
-  const isConnected = connectionStatus === 'CONNECTED' || (!isSystemError && Boolean(systemHealth));
-  const isDegraded = systemHealth?.status === 'DEGRADED';
+  }, [connect]);
 
   return {
-    connectionStatus,
-    transportMode,
-    isConnected,
-    isDegraded,
-    lastHeartbeat: lastHeartbeat || (dataUpdatedAt ? new Date(dataUpdatedAt) : null),
-    secondsSinceLastUpdate,
-    activeModelId: systemHealth?.active_model_id || 'isolation_forest_s42',
-    reconnectCount,
-    eventsReceivedCount,
+    connectionState,
     lastEvent,
+    lastHeartbeat,
+    isConnected: connectionState === 'CONNECTED',
+    reconnect: connect,
   };
 }

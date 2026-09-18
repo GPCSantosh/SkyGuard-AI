@@ -1,6 +1,6 @@
 /**
- * Strict TypeScript Data Models for SkyGuard AI
- * Directly aligned with FastAPI / Pydantic schemas in backend/app/models/
+ * SkyGuard AI — TypeScript Domain Contracts
+ * Authoritative schemas matching FastAPI models & OpenAPI 3.1 contract.
  */
 
 export type HybridDecisionType =
@@ -10,357 +10,307 @@ export type HybridDecisionType =
   | 'PROBABLE_DATA_QUALITY_ISSUE'
   | 'UNCERTAIN';
 
-export type AlertSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type DecisionSeverity = 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-export type HealthStatusBand = 'HEALTHY' | 'DEGRADED' | 'CRITICAL' | 'OFFLINE';
+export type DecisionReasonCode =
+  | 'NOMINAL_OBSERVATION'
+  | 'DATA_GAP'
+  | 'DUPLICATE_TIMESTAMP'
+  | 'OUT_OF_ORDER_TIMESTAMP'
+  | 'MISSING_REQUIRED_VARIABLES'
+  | 'OUT_OF_RANGE_PHYSICAL'
+  | 'PERSISTENT_VALUE'
+  | 'RAPID_RATE_OF_CHANGE'
+  | 'MULTIVARIATE_DEVIATION'
+  | 'ML_HIGH_ANOMALY_SCORE'
+  | 'ML_MODERATE_ANOMALY_SCORE'
+  | 'LOCAL_SPATIAL_ISOLATION'
+  | 'REGIONAL_SPATIAL_AGREEMENT'
+  | 'LOCAL_CLUSTER_AGREEMENT'
+  | 'INSUFFICIENT_SPATIAL_CONTEXT'
+  | 'CONFLICTING_EVIDENCE'
+  | 'MIXED_REGIONAL_EVENT_WITH_LOCAL_EXCESS';
 
-export type StationOperationalStatus = 'ACTIVE' | 'DEGRADED' | 'MAINTENANCE' | 'OFFLINE' | 'DECOMMISSIONED';
+export type StationStatusType = 'ACTIVE' | 'DEGRADED' | 'OFFLINE';
 
-export type RecommendationStatus =
-  | 'NO_CORRECTION_RECOMMENDED'
-  | 'REVIEW_RECOMMENDED'
-  | 'CORRECTION_CANDIDATE'
-  | 'INSUFFICIENT_EVIDENCE';
-
-export type EstimationMethod =
-  | 'CAUSAL_TEMPORAL_INTERPOLATION'
-  | 'RETROSPECTIVE_INTERPOLATION'
-  | 'SPATIAL_IDW_CONSENSUS'
-  | 'NEIGHBOR_WEIGHTED_MEDIAN'
-  | 'ROLLING_BASELINE'
-  | 'COMBINED_TEMPORAL_SPATIAL'
-  | 'NO_ESTIMATE';
-
-export type MethodQuality = 'HIGH' | 'MEDIUM' | 'LOW' | 'POOR';
+export interface Station {
+  station_id: string;
+  station_name: string;
+  latitude: number;
+  longitude: number;
+  elevation_m?: number;
+  status: StationStatusType;
+  network?: string;
+  hardware?: string;
+  commissioned_date?: string;
+  state?: string;
+  district?: string;
+  latest_observation?: WeatherObservation;
+  health_index?: number;
+  health_status?: string;
+  active_anomalies_count?: number;
+  last_seen_timestamp?: string;
+}
 
 export interface WeatherObservation {
   station_id: string;
+  station_name?: string;
   timestamp: string; // ISO 8601 UTC
-  temperature?: number | null; // °C
-  pressure?: number | null; // hPa
-  humidity?: number | null; // %
-  latitude: number;
-  longitude: number;
-  elevation?: number | null;
-  source: string;
-  ingestion_timestamp: string;
-  metadata?: Record<string, unknown>;
+  temperature_c: number | null;
+  humidity_pct: number | null;
+  pressure_hpa: number | null;
+  dew_point_c?: number | null;
+  data_quality_status?: 'VALID' | 'WARNING' | 'REJECTED' | 'GAP' | 'DUPLICATE';
+  freshness_seconds?: number;
+
+  // Dual-signal & spatial contextual comparator values
+  imputed_temperature_c?: number | null;
+  imputed_humidity_pct?: number | null;
+  imputed_pressure_hpa?: number | null;
+
+  neighbor_median_temperature_c?: number | null;
+  neighbor_median_humidity_pct?: number | null;
+  neighbor_median_pressure_hpa?: number | null;
+
+  is_anomalous?: boolean;
+  anomaly_decision?: HybridDecisionType;
+  anomaly_severity?: DecisionSeverity;
 }
 
 export interface LiveStationSnapshot {
   station_id: string;
   station_name: string;
-  latitude: number;
-  longitude: number;
-  elevation_m: number;
-  status: StationOperationalStatus;
-  last_seen_timestamp?: string | null;
-  latest_temperature_c?: number | null;
-  latest_humidity_pct?: number | null;
-  latest_pressure_hpa?: number | null;
-  latest_decision: HybridDecisionType;
-  latest_health_score?: number | null;
-  latest_health_band: HealthStatusBand;
-  active_anomaly_count_24h: number;
-}
-
-export interface StationItem {
-  station_id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  elevation_m: number;
-  state?: string | null;
-  status: StationOperationalStatus;
-  sampling_interval_seconds: number;
-  latest_snapshot?: LiveStationSnapshot | null;
+  timestamp: string;
+  status: StationStatusType;
+  latest_observation: WeatherObservation;
+  health_index: number;
+  health_status: string;
+  recent_anomalies: AnomalyEventRecord[];
+  freshness_seconds: number;
 }
 
 export interface AnomalyEventRecord {
   event_id: string;
   station_id: string;
+  station_name?: string;
   timestamp: string;
   decision: HybridDecisionType;
-  severity: AlertSeverity;
+  severity: DecisionSeverity;
   reason_codes: string[];
   observed_values: Record<string, number | null>;
-  recommended_values: Record<string, number | null>;
+  recommended_values?: Record<string, number | null>;
+  expected_values?: Record<string, number | null>;
   explanation_summary: string;
-  created_at: string;
+  created_at?: string;
+  duration_minutes?: number;
+  onset_timestamp?: string;
+  peak_timestamp?: string;
+  peak_value?: number;
+  target_variable?: string;
 }
 
 export interface FeatureContribution {
-  feature_name: string;
-  feature_value: number | string | null;
-  contribution?: number;
-  contribution_score?: number; // SHAP value or proxy
-  direction: 'increases_anomaly' | 'decreases_anomaly' | 'neutral' | 'INCREASES_ANOMALY' | 'DECREASES_ANOMALY' | 'NEUTRAL';
-  rank?: number;
+  feature: string;
+  display_name?: string;
+  value: number;
+  contribution: number;
+  direction: 'increases_anomaly' | 'decreases_anomaly' | 'neutral';
   description?: string;
 }
 
-export interface NeighborContextRecord {
-  neighbor_station_id: string;
-  distance_km: number;
-  observed_value?: number | null;
-  delta?: number | null;
-  is_consistent: boolean;
+export interface SpatialEvidence {
+  consensus: 'LOCAL_ONLY' | 'LOCAL_CLUSTER' | 'REGIONAL_PATTERN' | 'INSUFFICIENT_CONTEXT';
+  neighbor_count: number;
+  agreeing_count: number;
+  disagreeing_count: number;
+  max_deviation?: number;
+  neighbors?: Array<{
+    station_id: string;
+    station_name?: string;
+    distance_km: number;
+    azimuth_deg?: number;
+    temperature_c?: number | null;
+    humidity_pct?: number | null;
+    pressure_hpa?: number | null;
+    status: 'AGREE' | 'DISAGREE' | 'UNKNOWN';
+  }>;
 }
 
-export interface NeighborComparisonData {
-  target_station_id: string;
-  target_observed_value?: number | null;
-  neighbors: NeighborContextRecord[];
+export interface TemporalEvidence {
+  rate_of_change?: number;
+  rate_unit?: string;
+  flatline_count?: number;
+  zscore_1h?: number;
+  diurnal_residual?: number;
+  is_rate_exceeded?: boolean;
+}
+
+export interface DataQualityEvidence {
+  quality_status: string;
+  missing_fields?: string[];
+  communication_gap_minutes?: number | null;
+  is_duplicate?: boolean;
+  is_out_of_order?: boolean;
+  is_physical_out_of_bounds?: boolean;
+  evidence_state?: string;
+}
+
+export interface MultivariateEvidence {
+  is_consistent: boolean;
+  thermodynamic_status: string;
+  rh_dewpoint_check?: string;
+  hypsometric_pressure_check?: string;
+}
+
+export interface AuditMetadata {
+  model_version?: string;
+  feature_version?: string;
+  decision_engine_version?: string;
+  explanation_engine_version?: string;
+  explanation_method?: string;
+  input_station_id: string;
+  input_timestamp: string;
+  generated_at?: string;
 }
 
 export interface ExplanationSummary {
-  event_id?: string;
   station_id: string;
   timestamp: string;
   decision: HybridDecisionType;
-  severity: AlertSeverity;
-  summary?: string;
-  operator_summary?: string;
-  confidence_score?: number;
-  is_degraded_mode?: boolean;
-  reason_codes?: string[];
-  evidence_hierarchy?: {
-    direct_evidence?: unknown;
-    model_evidence?: unknown;
-    contextual_evidence?: unknown;
-    operational_interpretation?: unknown;
-  };
-  feature_contributions?: FeatureContribution[];
-  model_contributions?: FeatureContribution[];
-  neighbor_comparison?: NeighborComparisonData | null;
-  neighbor_comparisons?: NeighborContextRecord[];
-  recommended_investigation_steps?: string[];
-  recommended_actions?: string[];
-  created_at?: string;
+  severity: DecisionSeverity;
+  summary: string;
+  supporting_evidence: string[];
+  contradicting_evidence: string[];
+  unavailable_evidence: string[];
+  feature_contributions: FeatureContribution[];
+  spatial_evidence?: SpatialEvidence;
+  temporal_evidence?: TemporalEvidence;
+  data_quality_evidence?: DataQualityEvidence;
+  multivariate_evidence?: MultivariateEvidence;
+  audit_metadata?: AuditMetadata;
+  recommended_action?: string;
+  anomaly_score?: number;
+  calibrated_threshold?: number;
 }
 
-export interface HealthComponentScores {
-  anomaly_health: number; // 0-100
-  data_quality_health: number; // 0-100
-  communication_health: number; // 0-100
-  temporal_stability_health: number; // 0-100
-  spatial_consistency_health: number; // 0-100
-}
-
-/** Individual meteorological parameter channel reliability. health_score is null if insufficient history. */
-export interface ParameterHealth {
-  parameter_name: string;
-  health_score: number | null;
-  status_band: HealthStatusBand;
-  trend: 'IMPROVING' | 'STABLE' | 'DEGRADING' | 'INSUFFICIENT_HISTORY';
-  drift_indicator?: number | null;
-  flatline_duration_minutes?: number;
-  supporting_evidence?: string[];
-}
-
-/** @deprecated Use ParameterHealth keyed dict instead. Retained for legacy compatibility. */
-export interface ParameterHealthScores {
-  temperature_health?: number | null;
-  humidity_health?: number | null;
-  pressure_health?: number | null;
+export interface ComponentHealthScores {
+  anomaly_health: number;
+  data_quality_health: number;
+  communication_health: number;
+  temporal_stability_health: number;
+  spatial_consistency_health: number;
 }
 
 export interface SensorHealthSummary {
   station_id: string;
-  window_name: string;
-  overall_health_score: number | null; // 0-100
-  status_band: HealthStatusBand;
-  trend: 'IMPROVING' | 'STABLE' | 'DEGRADING' | 'INSUFFICIENT_HISTORY';
-  health_delta?: number | null;
-  component_scores: HealthComponentScores;
-  /** Dict keyed by parameter name (e.g. 'temperature_c', 'relative_humidity', 'sea_level_pressure_hpa') */
-  parameter_health: Record<string, ParameterHealth>;
-  maintenance_recommendation: string;
-  reason_codes: string[];
-  summary: string;
-  supporting_evidence: string[];
-  recommended_action: string;
-  audit_metadata: {
-    health_engine_version: string;
-    window_name: string;
-    window_hours: number;
-    total_observations_evaluated: number;
-    generated_at: string;
-  };
-}
-
-export interface UncertaintyEstimate {
-  estimate_range: [number, number];
-  standard_error?: number | null;
-  absolute_deviation?: number | null;
-  supporting_neighbor_count: number;
-  method_quality: MethodQuality;
-  confidence_index: number;
-  notes: string[];
+  station_name?: string;
+  timestamp: string;
+  health_index: number;
+  health_status: 'HEALTHY' | 'GOOD' | 'ATTENTION' | 'DEGRADED' | 'CRITICAL' | 'INSUFFICIENT_HISTORY';
+  health_trend: 'IMPROVING' | 'STABLE' | 'DEGRADING';
+  maintenance_recommendation:
+    | 'NO_ACTION'
+    | 'MONITOR'
+    | 'ROUTINE_CALIBRATION'
+    | 'PRIORITY_INSPECTION'
+    | 'IMMEDIATE_INTERVENTION';
+  component_scores: ComponentHealthScores;
+  parameter_health?: Record<
+    string,
+    {
+      score: number;
+      status: string;
+      trend: string;
+      channel_id?: string;
+    }
+  >;
+  history?: Array<{
+    timestamp: string;
+    score: number;
+  }>;
 }
 
 export interface CorrectionRecommendation {
   observation_id: string;
   station_id: string;
+  station_name?: string;
   timestamp: string;
   target_variable: string;
   observed_value: number;
-  recommended_value?: number | null;
-  status: RecommendationStatus;
-  method: EstimationMethod;
-  decision_type: HybridDecisionType | string;
+  recommended_value: number | null;
+  status:
+    | 'REVIEW_REQUIRED'
+    | 'CORRECTION_CANDIDATE'
+    | 'IMPUTED'
+    | 'ACCEPTED'
+    | 'REJECTED'
+    | 'NO_ACTION_REQUIRED';
+  method: string;
+  decision_type: string;
   reason_codes: string[];
   supporting_evidence: string[];
-  uncertainty?: UncertaintyEstimate | null;
+  uncertainty?: {
+    lower_bound: number;
+    upper_bound: number;
+    confidence_level: number;
+    quality_grade: string;
+  };
+  certainty_index?: number;
   multivariate_consistent: boolean;
   station_health_score?: number | null;
   station_health_band?: string | null;
   operator_summary: string;
+  supporting_neighbors_count?: number;
+  supporting_neighbors?: string[];
   audit_metadata?: {
-    imputation_engine_version: string;
-    decision_engine_version: string;
-    is_causal_mode: boolean;
-    generated_at: string;
+    imputation_engine_version?: string;
+    decision_engine_version?: string;
+    generated_at?: string;
+    is_causal_mode?: boolean;
   };
-  created_at: string;
+  created_at?: string;
 }
 
-export interface SystemHealthStatus {
-  status: 'HEALTHY' | 'DEGRADED' | 'CRITICAL';
-  service: string;
-  version: string;
-  database_status: string;
-  model_registry_status: string;
-  active_model_id: string;
-  spatial_topology_stations_count: number;
-  active_monitored_stations: number;
-  total_observations_processed: number;
-  last_processed_timestamp?: string | null;
-  mean_pipeline_latency_ms: number;
-  replay_simulator_status: string;
-  uptime_seconds: number;
-  checked_at: string;
-}
-
-export interface ReplayScenarioEvent {
-  step: number;
-  timestamp: string;
-  station_id: string;
-  anomaly_type: string;
-  expected_decision: string;
-  explanation: string;
-}
-
-export interface ReplayScenario {
-  id: string;
+export interface SystemComponentHealth {
   name: string;
-  description: string;
-  total_steps?: number;
-  total_observations?: number;
-  key_events?: ReplayScenarioEvent[];
+  status: 'OK' | 'WARN' | 'ERROR';
+  details: string;
+  latency_ms?: number;
+}
+
+export interface PipelineLatencyItem {
+  stage: string;
+  p50_ms: number;
+  p95_ms: number;
+  target_sla: string;
+  passed: boolean;
 }
 
 export interface ReplayStatus {
-  mode?: string;
-  is_running: boolean;
-  current_scenario_id?: string;
-  current_index?: number;
-  total_queued_observations: number;
-  emitted_count: number;
-  speed_multiplier: number;
-  registered_injected_anomalies_count: number;
+  is_active: boolean;
+  mode: string;
+  current_step: number;
+  total_steps: number;
+  emitted_packets: number;
+  queued_packets: number;
+  last_emitted_timestamp?: string;
 }
 
-export interface PaginationMeta {
-  total_count: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
+export interface SystemHealthStatus {
+  status: 'OPERATIONAL' | 'DEGRADED' | 'OUTAGE';
+  uptime_seconds: number;
+  uptime_human?: string;
+  api_version: string;
+  components: SystemComponentHealth[];
+  latency_breakdown: PipelineLatencyItem[];
+  replay_status?: ReplayStatus;
+  monitored_stations_count?: number;
+  total_observations_processed?: number;
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
-  pagination: PaginationMeta;
-}
-
-export type SourceHealthState =
-  | 'HEALTHY'
-  | 'DEGRADED'
-  | 'STALE'
-  | 'DISCONNECTED'
-  | 'RATE_LIMITED'
-  | 'AUTH_ERROR'
-  | 'CONFIG_ERROR';
-
-export type StationLiveStatus = 'LIVE' | 'STALE' | 'OFFLINE';
-
-export interface OutageEpisodeSummary {
-  episode_id: string;
-  started_at: string;
-  resolved_at?: string | null;
-  source: string;
-  affected_stations: string[];
-  initial_state: SourceHealthState;
-  current_state: SourceHealthState;
-  duration_seconds: number;
-  failure_categories: string[];
-  observation_loss_estimate?: number | null;
-  is_ongoing: boolean;
-}
-
-export interface StationLiveRecord {
-  station_id: string;
-  status: StationLiveStatus;
-  last_observation_timestamp?: string | null;
-  last_ingestion_timestamp?: string | null;
-  observation_age_seconds?: number | null;
-  ingestion_latency_seconds?: number | null;
-  consecutive_failures: number;
-  latest_successful_poll_utc?: string | null;
-  latest_error_category: string;
-  latest_error_message?: string | null;
-  is_stale: boolean;
-  duplicate_count: number;
-  rejected_observation_count: number;
-  temperature_c?: number | null;
-  humidity_pct?: number | null;
-  pressure_hpa?: number | null;
-}
-
-export interface LiveSourceHealthSummary {
-  status: SourceHealthState;
-  source_state: SourceHealthState;
-  provider: string;
-  is_polling: boolean;
-  poll_interval_seconds: number;
-  stale_threshold_seconds: number;
-  last_request_latency_ms?: number | null;
-  counts: {
-    total_stations: number;
-    live_stations: number;
-    stale_stations: number;
-    offline_stations: number;
-  };
-  metrics: {
-    requests_total?: number;
-    requests_success?: number;
-    requests_failed?: number;
-    observations_ingested?: number;
-    observations_rejected?: number;
-    stale_observations?: number;
-    duplicate_observations?: number;
-    last_poll_cycle_start?: string | null;
-    last_poll_cycle_duration_ms?: number | null;
-    mean_request_latency_ms?: number;
-  };
-  active_episode?: OutageEpisodeSummary | null;
-  recent_episodes?: OutageEpisodeSummary[];
-  recent_transitions?: Array<{
-    from_state: SourceHealthState;
-    to_state: SourceHealthState;
-    timestamp: string;
-    reason: string;
-    trigger_category: string;
-  }>;
-  station_live_records?: Record<string, StationLiveRecord>;
+  total: number;
+  limit: number;
+  offset: number;
 }

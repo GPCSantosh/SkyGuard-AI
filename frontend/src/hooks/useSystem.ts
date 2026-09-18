@@ -1,43 +1,43 @@
+/**
+ * SkyGuard AI — TanStack Query Hooks for System Observability & Replay Engine
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  fetchSystemHealth,
-  fetchReplayStatus,
-  fetchReplayScenarios,
-  loadReplayScenario,
-  resetReplaySimulation,
-  stepReplaySimulation,
-  fetchLiveSourceHealth,
-  triggerLivePoll,
-} from '../api/system';
+import { systemApi } from '../api/system';
+import { replayApi } from '../api/replay';
 
 export function useSystemHealth() {
   return useQuery({
     queryKey: ['system', 'health'],
-    queryFn: fetchSystemHealth,
-    refetchInterval: 5000,
+    queryFn: () => systemApi.getSystemHealth(),
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+}
+
+export function useLiveStatus() {
+  return useQuery({
+    queryKey: ['system', 'live-status'],
+    queryFn: () => systemApi.getLiveStatus(),
+    refetchInterval: 15000,
+    staleTime: 10000,
   });
 }
 
 export function useReplayStatus() {
   return useQuery({
     queryKey: ['replay', 'status'],
-    queryFn: fetchReplayStatus,
-    refetchInterval: 2000,
+    queryFn: () => replayApi.getReplayStatus(),
+    refetchInterval: 10000,
+    staleTime: 5000,
   });
 }
 
-export function useReplayScenarios() {
-  return useQuery({
-    queryKey: ['replay', 'scenarios'],
-    queryFn: fetchReplayScenarios,
-    staleTime: 60000,
-  });
-}
-
-export function useLoadScenario() {
+export function useReplayActions() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (scenarioId: string) => loadReplayScenario(scenarioId),
+
+  const stepMutation = useMutation({
+    mutationFn: (count?: number) => replayApi.stepReplay(count),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['replay'] });
       queryClient.invalidateQueries({ queryKey: ['stations'] });
@@ -45,53 +45,31 @@ export function useLoadScenario() {
       queryClient.invalidateQueries({ queryKey: ['corrections'] });
     },
   });
-}
 
-export function useResetReplay() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: resetReplaySimulation,
+  const resetMutation = useMutation({
+    mutationFn: () => replayApi.resetReplay(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['replay'] });
       queryClient.invalidateQueries({ queryKey: ['stations'] });
       queryClient.invalidateQueries({ queryKey: ['anomalies'] });
       queryClient.invalidateQueries({ queryKey: ['corrections'] });
-      queryClient.invalidateQueries({ queryKey: ['system'] });
     },
   });
-}
 
-export function useLiveSourceHealth() {
-  return useQuery({
-    queryKey: ['live', 'source-health'],
-    queryFn: fetchLiveSourceHealth,
-    refetchInterval: 5000,
-  });
-}
-
-export function useTriggerLivePoll() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: triggerLivePoll,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['live', 'source-health'] });
-      queryClient.invalidateQueries({ queryKey: ['stations'] });
-      queryClient.invalidateQueries({ queryKey: ['anomalies'] });
-      queryClient.invalidateQueries({ queryKey: ['system'] });
-    },
-  });
-}
-
-export function useStepReplay() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (count: number = 1) => stepReplaySimulation(count),
+  const pollNowMutation = useMutation({
+    mutationFn: () => systemApi.triggerImmediatePoll(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stations'] });
       queryClient.invalidateQueries({ queryKey: ['anomalies'] });
-      queryClient.invalidateQueries({ queryKey: ['corrections'] });
-      queryClient.invalidateQueries({ queryKey: ['system'] });
-      queryClient.invalidateQueries({ queryKey: ['replay'] });
     },
   });
+
+  return {
+    step: stepMutation.mutate,
+    isStepping: stepMutation.isPending,
+    reset: resetMutation.mutate,
+    isResetting: resetMutation.isPending,
+    pollNow: pollNowMutation.mutate,
+    isPollingNow: pollNowMutation.isPending,
+  };
 }

@@ -1,38 +1,33 @@
-import { useQuery } from '@tanstack/react-query';
-import {
-  fetchAnomalies,
-  fetchAnomalyDetail,
-  fetchAnomalyExplanation,
-} from '../api/anomalies';
+/**
+ * SkyGuard AI — TanStack Query Hooks for Anomalies & Explainability
+ */
 
-export function useAnomalies(params?: {
-  stationId?: string;
-  decision?: string;
-  severity?: string;
-  startTime?: string;
-  endTime?: string;
-  limit?: number;
-  offset?: number;
-}) {
+import { useQuery } from '@tanstack/react-query';
+import { anomaliesApi, AnomalyFilterParams } from '../api/anomalies';
+
+export function useAnomalies(params?: AnomalyFilterParams) {
   return useQuery({
     queryKey: ['anomalies', params],
-    queryFn: () => fetchAnomalies(params),
-    refetchInterval: 5000,
+    queryFn: () => anomaliesApi.getAnomalies(params),
+    refetchInterval: 15000,
+    staleTime: 10000,
   });
 }
 
-export function useAnomalyDetail(eventId: string) {
+export function useAnomaly(eventId: string) {
   return useQuery({
     queryKey: ['anomaly', eventId],
-    queryFn: () => fetchAnomalyDetail(eventId),
+    queryFn: () => anomaliesApi.getAnomaly(eventId),
     enabled: Boolean(eventId),
+    staleTime: 30000,
   });
 }
 
 export function useAnomalyExplanation(eventId: string) {
   return useQuery({
     queryKey: ['anomaly', eventId, 'explanation'],
-    queryFn: () => fetchAnomalyExplanation(eventId),
+    queryFn: () => anomaliesApi.getAnomalyExplanation(eventId),
     enabled: Boolean(eventId),
+    staleTime: 60000,
   });
 }

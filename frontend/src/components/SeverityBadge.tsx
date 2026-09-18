@@ -1,35 +1,28 @@
+/**
+ * SkyGuard AI — Severity Badge Component
+ * Strict 4px rounded badge per UI_DESIGN_SYSTEM.md (never rounded-full).
+ */
+
 import React from 'react';
-import { AlertSeverity } from '../types/api';
+import { DecisionSeverity } from '../types/api';
+import { getSeverityStyle } from '../utils/formatters';
 
 interface SeverityBadgeProps {
-  severity: AlertSeverity | string;
+  severity: DecisionSeverity;
+  size?: 'sm' | 'md';
 }
 
-export const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity }) => {
-  let styles = 'bg-slate-800 text-slate-300 border-slate-700';
+export const SeverityBadge: React.FC<SeverityBadgeProps> = ({
+  severity,
+  size = 'md',
+}) => {
+  const style = getSeverityStyle(severity);
 
-  switch (severity?.toUpperCase()) {
-    case 'CRITICAL':
-      styles = 'bg-red-950/70 text-red-400 border-red-800/80 font-semibold';
-      break;
-    case 'HIGH':
-      styles = 'bg-orange-950/70 text-orange-400 border-orange-800/80 font-semibold';
-      break;
-    case 'MEDIUM':
-      styles = 'bg-amber-950/70 text-amber-400 border-amber-800/80';
-      break;
-    case 'LOW':
-      styles = 'bg-sky-950/70 text-sky-400 border-sky-800/80';
-      break;
-    case 'INFO':
-    case 'NOMINAL':
-      styles = 'bg-slate-900 text-slate-400 border-slate-800';
-      break;
-  }
+  const pad = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
 
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono tracking-wider uppercase border ${styles}`}
+      className={`inline-block font-mono font-medium tracking-wider border rounded ${style.bg} ${style.text} ${style.border} ${pad} select-none uppercase`}
     >
       {severity}
     </span>

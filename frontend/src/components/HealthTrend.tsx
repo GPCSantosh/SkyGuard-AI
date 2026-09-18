@@ -1,153 +1,219 @@
+/**
+ * SkyGuard AI — Health Trend & 5-Component Breakdown Component
+ * Visualizes the 5 component dimensions and 30-day degradation trend.
+ */
+
 import React from 'react';
-import { HealthComponentScores, ParameterHealth } from '../types/api';
-import { formatHealthScore } from '../utils/formatters';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
+import { ComponentHealthScores } from '../types/api';
 
 interface HealthTrendProps {
-  /** Component scores object using actual backend field names (anomaly_health, etc.) */
-  components?: HealthComponentScores;
-  /** Dict keyed by parameter name: 'temperature_c', 'relative_humidity', 'sea_level_pressure_hpa' */
-  parameterHealth?: Record<string, ParameterHealth>;
+  componentScores: ComponentHealthScores;
+  parameterHealth?: Record<
+    string,
+    { score: number; status: string; trend: string }
+  >;
+  history?: Array<{ timestamp: string; score: number }>;
 }
 
 export const HealthTrend: React.FC<HealthTrendProps> = ({
-  components,
+  componentScores,
   parameterHealth,
+  history = [],
 }) => {
-  // Use actual backend field names from ComponentHealthScores
-  const componentItems = [
-    { label: 'Anomaly Density', score: components?.anomaly_health },
-    { label: 'Data Quality / QC', score: components?.data_quality_health },
-    { label: 'Communication Liveness', score: components?.communication_health },
-    { label: 'Temporal Stability', score: components?.temporal_stability_health },
-    { label: 'Spatial Consistency', score: components?.spatial_consistency_health },
+  const components = [
+    {
+      key: 'anomaly_health',
+      name: 'Anomaly Health',
+      score: componentScores.anomaly_health,
+      desc: 'Deduced from anomalous spike/drift frequency',
+    },
+    {
+      key: 'data_quality_health',
+      name: 'Data Quality / QC',
+      score: componentScores.data_quality_health,
+      desc: 'Deduced from missingness and bounds validity',
+    },
+    {
+      key: 'communication_health',
+      name: 'Communication Liveness',
+      score: componentScores.communication_health,
+      desc: 'Packet latency, gap duration, and out-of-order sequences',
+    },
+    {
+      key: 'temporal_stability_health',
+      name: 'Temporal Stability',
+      score: componentScores.temporal_stability_health,
+      desc: 'Flatline count and diurnal harmonic residual',
+    },
+    {
+      key: 'spatial_consistency_health',
+      name: 'Spatial Consistency',
+      score: componentScores.spatial_consistency_health,
+      desc: 'Consensus alignment with geographic neighbors',
+    },
   ];
-
-  const getScoreColor = (score: number) => {
-    if (score < 60) return 'bg-red-500';
-    if (score < 85) return 'bg-amber-500';
-    return 'bg-emerald-500';
-  };
-
-  // Extract named parameter channels from the keyed dict (backend keys from ParameterHealth.parameter_name)
-  // The backend emits keys like 'temperature_c', 'relative_humidity', 'sea_level_pressure_hpa'
-  const tempHealth = parameterHealth?.['temperature_c'] ?? parameterHealth?.['temperature'];
-  const humidHealth = parameterHealth?.['relative_humidity'] ?? parameterHealth?.['humidity'];
-  const pressHealth = parameterHealth?.['sea_level_pressure_hpa'] ?? parameterHealth?.['pressure'];
-
-  const hasAnyParameterHealth = Boolean(tempHealth || humidHealth || pressHealth);
 
   return (
     <div className="space-y-4">
-      <div className="p-4 rounded border bg-surface-1 border-border">
-        <h4 className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-3">
-          5-Component Reliability Breakdown
-        </h4>
+      {/* 5-Component Breakdown */}
+      <div className="bg-[#111827] border border-[#2D3748] rounded p-3.5">
+        <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#2D3748]">
+          <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#F8FAFC]">
+            5-Component Reliability Breakdown
+          </h4>
+          <span className="text-[11px] font-mono text-[#64748B]">
+            Empirical Dimensions (0-100)
+          </span>
+        </div>
 
-        {components ? (
-          <div className="space-y-2.5">
-            {componentItems.map((item) => {
-              const score = item.score ?? null;
-              const isAvailable = score !== null && score !== undefined;
+        <div className="space-y-2.5">
+          {components.map((comp) => {
+            const barColor =
+              comp.score >= 85
+                ? 'bg-emerald-500'
+                : comp.score >= 65
+                ? 'bg-amber-500'
+                : 'bg-red-500';
+
+            return (
+              <div key={comp.key} className="space-y-1">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-[#F8FAFC] font-medium">{comp.name}</span>
+                  <span className="font-semibold text-[#38BDF8]">
+                    {comp.score} <span className="text-[#64748B] text-[10px]">/ 100</span>
+                  </span>
+                </div>
+                <div className="w-full bg-[#1A2234] h-2 rounded overflow-hidden flex border border-[#2D3748]/60">
+                  <div
+                    className={`h-full transition-all duration-300 rounded ${barColor}`}
+                    style={{ width: `${comp.score}%` }}
+                  />
+                </div>
+                <div className="text-[10px] text-[#64748B]">{comp.desc}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Parameter Channel Health */}
+      {parameterHealth && (
+        <div className="bg-[#111827] border border-[#2D3748] rounded p-3.5">
+          <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-[#2D3748]">
+            <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#F8FAFC]">
+              Parameter-Level Sensor Status
+            </h4>
+            <span className="text-[11px] font-mono text-[#64748B]">Channel Isolation</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {Object.entries(parameterHealth).map(([param, info]) => {
+              const label =
+                param === 'temperature_c'
+                  ? 'Temperature (°C)'
+                  : param === 'humidity_pct'
+                  ? 'Humidity (%)'
+                  : 'Pressure (hPa)';
+
+              const statusColor =
+                info.status === 'HEALTHY'
+                  ? 'text-emerald-400 border-emerald-800/60 bg-emerald-950/30'
+                  : info.status === 'ATTENTION'
+                  ? 'text-amber-400 border-amber-800/60 bg-amber-950/30'
+                  : 'text-red-400 border-red-800/60 bg-red-950/30';
+
               return (
-                <div key={item.label} className="space-y-1">
-                  <div className="flex justify-between text-[11px] font-mono">
-                    <span className="text-slate-300">{item.label}</span>
-                    {isAvailable ? (
-                      <span className="text-slate-200 font-semibold">
-                        {formatHealthScore(score)}/100
-                      </span>
-                    ) : (
-                      <span className="text-slate-500 italic">Unavailable</span>
-                    )}
+                <div key={param} className="bg-[#1A2234] border border-[#2D3748] rounded p-2.5">
+                  <div className="text-[11px] font-mono text-[#94A3B8] truncate">{label}</div>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-lg font-mono font-bold text-[#F8FAFC]">
+                      {info.score}
+                    </span>
+                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${statusColor}`}>
+                      {info.status}
+                    </span>
                   </div>
-                  <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${isAvailable ? getScoreColor(score!) : 'bg-slate-700'} transition-all duration-300`}
-                      style={{ width: isAvailable ? `${Math.min(Math.max(score!, 0), 100)}%` : '0%' }}
-                    />
+                  <div className="text-[10px] font-mono text-[#64748B] mt-1">
+                    Trend: {info.trend}
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <p className="text-[11px] font-mono text-slate-500 italic">
-            Component scores not yet available for this station.
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Parameter-level health: rendered from Dict<string, ParameterHealth> */}
-      <div className="p-4 rounded border bg-surface-1 border-border">
-        <h4 className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-3">
-          Parameter-Level Sensor Status
-        </h4>
-
-        {hasAnyParameterHealth ? (
-          <div className="grid grid-cols-3 gap-3">
-            {/* Temperature */}
-            <div className="p-2.5 rounded bg-surface-2 border border-border-subtle text-center">
-              <span className="text-[10px] font-mono text-slate-400 block">TEMPERATURE</span>
-              {tempHealth?.health_score !== null && tempHealth?.health_score !== undefined ? (
-                <>
-                  <span className="text-h2 font-mono font-semibold text-ops-weather">
-                    {formatHealthScore(tempHealth.health_score)}%
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
-                    {tempHealth.status_band}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[11px] font-mono text-slate-500 italic block mt-1">
-                  Insufficient data
-                </span>
-              )}
-            </div>
-
-            {/* Humidity */}
-            <div className="p-2.5 rounded bg-surface-2 border border-border-subtle text-center">
-              <span className="text-[10px] font-mono text-slate-400 block">HUMIDITY</span>
-              {humidHealth?.health_score !== null && humidHealth?.health_score !== undefined ? (
-                <>
-                  <span className="text-h2 font-mono font-semibold text-ops-humidity">
-                    {formatHealthScore(humidHealth.health_score)}%
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
-                    {humidHealth.status_band}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[11px] font-mono text-slate-500 italic block mt-1">
-                  Insufficient data
-                </span>
-              )}
-            </div>
-
-            {/* Pressure */}
-            <div className="p-2.5 rounded bg-surface-2 border border-border-subtle text-center">
-              <span className="text-[10px] font-mono text-slate-400 block">PRESSURE</span>
-              {pressHealth?.health_score !== null && pressHealth?.health_score !== undefined ? (
-                <>
-                  <span className="text-h2 font-mono font-semibold text-ops-pressure">
-                    {formatHealthScore(pressHealth.health_score)}%
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
-                    {pressHealth.status_band}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[11px] font-mono text-slate-500 italic block mt-1">
-                  Insufficient data
-                </span>
-              )}
-            </div>
+      {/* 30-Day Health Trend Area Chart */}
+      {history.length > 0 && (
+        <div className="bg-[#111827] border border-[#2D3748] rounded p-3.5">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2D3748]">
+            <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-[#F8FAFC]">
+              Health Index Trajectory (30-Day Trend)
+            </h4>
+            <span className="text-[11px] font-mono text-[#64748B]">Empirical Reliability Area</span>
           </div>
-        ) : (
-          <p className="text-[11px] font-mono text-slate-500 italic">
-            Parameter-level health data not yet available for this station.
-          </p>
-        )}
-      </div>
+
+          <div style={{ width: '100%', height: 140 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={history} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="healthAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" opacity={0.5} />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#64748B"
+                  tick={{ fontSize: 9, fontFamily: 'JetBrains Mono', fill: '#64748B' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#2D3748' }}
+                  interval={5}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  stroke="#64748B"
+                  tick={{ fontSize: 9, fontFamily: 'JetBrains Mono', fill: '#64748B' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#2D3748' }}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    return (
+                      <div className="bg-[#1A2234] border border-[#3D4F6B] p-2 rounded shadow text-xs font-mono">
+                        <div className="text-[#94A3B8]">{label}</div>
+                        <div className="text-emerald-400 font-bold">
+                          Health: {payload[0].value} / 100
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#10B981"
+                  strokeWidth={1.5}
+                  fillOpacity={1}
+                  fill="url(#healthAreaGrad)"
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,15 +1,20 @@
-# SkyGuard AI — Frontend (Meteorological Operations Center)
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-The SkyGuard AI frontend is a high-density, real-time monitoring interface for Automatic Weather Station networks.
+# Run and deploy your AI Studio app
 
-## Architecture
-- **Framework**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui design tokens adhering to `docs/UI_DESIGN_SYSTEM.md`
-- **Charts**: Recharts (Synchronized multi-axis time series, raw vs. imputed comparison, spatial neighbor consistency)
-- **Data Fetching**: TanStack Query
+This contains everything you need to run your app locally.
 
-## Visual Language
-Follows the **Meteorological Operations Center / Weather Mission Control** aesthetic:
-- Deep-slate / dark-navy neutral background (`#0B0F17`, `#111827`)
-- Strict semantic color mapping (Cyan/Sky for Temperature, Violet for Pressure, Emerald for Humidity, Amber for Warning, Red for Critical Anomaly, Indigo for Genuine Weather Events)
-- Monospace formatting for coordinates, timestamps, and sensor telemetry.
+View your app in AI Studio: https://ai.studio/apps/09dcdc78-c061-4751-99a6-96ad0228d16d
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

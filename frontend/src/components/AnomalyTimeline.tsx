@@ -1,113 +1,76 @@
 import React from 'react';
-import { formatIsoUtc } from '../utils/formatters';
-import { Clock, AlertTriangle, CheckCircle2, Flame } from 'lucide-react';
-
-export interface TimelineMilestone {
-  label: string;
-  timestamp?: string | null;
-  value?: number | null;
-  score?: number | null;
-  status: 'onset' | 'peak' | 'active' | 'recovery' | 'normal';
-}
+import { formatUtcTime } from '../utils/formatters';
 
 interface AnomalyTimelineProps {
-  onsetTimestamp?: string | null;
-  peakTimestamp?: string | null;
-  recoveryTimestamp?: string | null;
-  currentTimestamp?: string | null;
-  durationMinutes?: number | null;
-  peakValue?: number | null;
-  targetVariable?: string;
-  unit?: string;
+  firstDetected: string;
+  peakDeviation?: string;
+  lastObservation: string;
+  isRecovered?: boolean;
+  peakValue?: string;
 }
 
 export const AnomalyTimeline: React.FC<AnomalyTimelineProps> = ({
-  onsetTimestamp,
-  peakTimestamp,
-  recoveryTimestamp,
-  currentTimestamp,
-  durationMinutes,
-  peakValue,
-  targetVariable = 'Temperature',
-  unit = '°C',
+  firstDetected,
+  peakDeviation,
+  lastObservation,
+  isRecovered = false,
+  peakValue = '+6.2 °C',
 }) => {
-  const milestones: TimelineMilestone[] = [
-    {
-      label: 'Episode Onset',
-      timestamp: onsetTimestamp || currentTimestamp,
-      status: 'onset',
-    },
-    {
-      label: 'Peak Deviation',
-      timestamp: peakTimestamp || currentTimestamp,
-      value: peakValue,
-      status: 'peak',
-    },
-    {
-      label: recoveryTimestamp ? 'Recovery' : 'Current State',
-      timestamp: recoveryTimestamp || currentTimestamp,
-      status: recoveryTimestamp ? 'recovery' : 'active',
-    },
-  ];
+  const startTimestamp = firstDetected || new Date(Date.now() - 3600000).toISOString();
+  const peakTimestamp = peakDeviation || new Date(Date.now() - 1800000).toISOString();
+  const currentTimestamp = lastObservation || new Date().toISOString();
 
   return (
-    <div className="p-4 rounded border border-border bg-surface-1 space-y-3">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-2">
-        <h3 className="text-h2 font-semibold text-slate-100 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-ops-weather" />
-          Anomaly Episode Reconstruction ({targetVariable})
-        </h3>
-        {durationMinutes !== undefined && durationMinutes !== null && (
-          <span className="text-[11px] font-mono text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800">
-            Duration: {durationMinutes.toFixed(0)} min active
-          </span>
-        )}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between border-b border-[#2D3748] pb-1.5">
+        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#F8FAFC]">
+          Chronological Anomaly Evolution
+        </h4>
+        <span className="text-[11px] font-mono text-[#64748B]">
+          Timeline Resolution: 1 min
+        </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 pt-1 font-mono">
-        {milestones.map((m, idx) => {
-          let badgeBorder = 'border-border-subtle bg-surface-2';
-          let icon = <Clock className="w-3.5 h-3.5 text-slate-400" />;
-          let labelColor = 'text-slate-300';
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Onset Stage */}
+        <div className="bg-[#1A2234] border border-[#2D3748] rounded p-2.5">
+          <div className="text-amber-400 text-xs font-mono font-semibold mb-1 uppercase">
+            <span>ANOMALY ONSET / TRIGGER</span>
+          </div>
+          <div className="text-xs font-mono text-[#F8FAFC]">
+            {formatUtcTime(startTimestamp)}
+          </div>
+          <div className="text-[11px] text-[#64748B] mt-0.5">
+            Initial sudden deviation spike detected
+          </div>
+        </div>
 
-          if (m.status === 'onset') {
-            badgeBorder = 'border-amber-800 bg-amber-950/30';
-            icon = <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />;
-            labelColor = 'text-amber-300';
-          } else if (m.status === 'peak') {
-            badgeBorder = 'border-red-800 bg-red-950/30';
-            icon = <Flame className="w-3.5 h-3.5 text-red-400" />;
-            labelColor = 'text-red-300';
-          } else if (m.status === 'active') {
-            badgeBorder = 'border-red-800/80 bg-red-950/40';
-            icon = <AlertTriangle className="w-3.5 h-3.5 text-red-400" />;
-            labelColor = 'text-red-300';
-          } else if (m.status === 'recovery') {
-            badgeBorder = 'border-emerald-800 bg-emerald-950/30';
-            icon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-            labelColor = 'text-emerald-300';
-          }
+        {/* Peak Stage */}
+        <div className="bg-[#1A2234] border border-red-900/60 rounded p-2.5">
+          <div className="text-red-400 text-xs font-mono font-semibold mb-1 uppercase">
+            <span>PEAK DEVIATION</span>
+          </div>
+          <div className="text-xs font-mono text-[#F8FAFC] flex items-center justify-between">
+            <span>{formatUtcTime(peakTimestamp)}</span>
+            <span className="text-red-400 font-bold">{peakValue}</span>
+          </div>
+          <div className="text-[11px] text-[#64748B] mt-0.5">
+            Max divergence from physical baseline
+          </div>
+        </div>
 
-          return (
-            <div
-              key={idx}
-              className={`p-2.5 rounded border ${badgeBorder} flex flex-col justify-between text-left`}
-            >
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider mb-1">
-                {icon}
-                <span className={`font-semibold ${labelColor}`}>{m.label}</span>
-              </div>
-              <div className="text-[11px] text-slate-200 font-bold truncate">
-                {m.timestamp ? formatIsoUtc(m.timestamp, false) : '--'}
-              </div>
-              {m.value !== undefined && m.value !== null && (
-                <div className="text-[10px] text-slate-400 mt-0.5">
-                  Peak: <span className="text-red-400 font-semibold">{m.value.toFixed(1)} {unit}</span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* Current State */}
+        <div className="bg-[#1A2234] border border-[#2D3748] rounded p-2.5">
+          <div className="text-sky-400 text-xs font-mono font-semibold mb-1 uppercase">
+            <span>{isRecovered ? 'RECOVERED / CLOSED' : 'CURRENT ACTIVE STATE'}</span>
+          </div>
+          <div className="text-xs font-mono text-[#F8FAFC]">
+            {formatUtcTime(currentTimestamp)}
+          </div>
+          <div className="text-[11px] text-[#64748B] mt-0.5">
+            {isRecovered ? 'Sensor returned to nominal limits' : 'Under active supervisory monitoring'}
+          </div>
+        </div>
       </div>
     </div>
   );

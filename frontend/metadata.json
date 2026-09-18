@@ -1,0 +1,6 @@
+{
+  "name": "SkyGuard AI — Meteorological Operations Center",
+  "description": "Enterprise-grade meteorological data quality, real-time anomaly detection, sensor health monitoring, and advisory correction review platform for Automatic Weather Station (AWS) networks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
