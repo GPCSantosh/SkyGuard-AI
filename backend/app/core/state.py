@@ -147,3 +147,84 @@ class StationStateManager:
                 })
 
         return pool
+
+
+class RunContextManager:
+    """Singleton manager maintaining active canonical RunContext across the backend."""
+
+    def __init__(self) -> None:
+        from backend.app.models.run_context import DataSourceType, RunContext, RunMode, RunStatus, TransportType
+
+        self.active_context: RunContext = RunContext(
+            run_id="RUN-DEFAULT-001",
+            source_type=DataSourceType.SYNTHETIC_VALIDATION,
+            source_name="Synthetic Benchmark Replay",
+            mode=RunMode.SYNTHETIC_REPLAY,
+            dataset_id="synthetic_validation_v1",
+            dataset_version="1.0.0",
+            station_count=20,
+            observation_count=5760,
+            cadence="5 minutes",
+            ground_truth_available=True,
+            replay_speed=1.0,
+            transport=TransportType.WEBSOCKET,
+            database_target="isolated_synthetic_db",
+            status=RunStatus.IDLE,
+            metadata={
+                "seed": 42,
+                "scenarios": 24,
+                "time_range_hours": 24,
+            },
+        )
+
+    def get_context(self) -> RunContext:
+        """Return a copy of the current active RunContext."""
+        return self.active_context
+
+    def update_context(self, **kwargs: Any) -> RunContext:
+        """Update fields on the active RunContext and return updated instance."""
+        updated_dict = self.active_context.model_dump()
+        updated_dict.update(kwargs)
+        from backend.app.models.run_context import RunContext
+        self.active_context = RunContext(**updated_dict)
+        return self.active_context
+
+    def select_source(
+        self,
+        source_type: str,
+        mode: str,
+        dataset_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
+    ) -> RunContext:
+        """Switch data source, generating a new run_id and updating execution metadata."""
+        from backend.app.connectors.provider_registry import ProviderRegistry
+        from backend.app.models.run_context import DataSourceType, RunContext, RunMode, RunStatus, TransportType
+
+        provider_info = ProviderRegistry.get_provider_info(source_type)
+        if not provider_info["configured"]:
+            raise ValueError(f"Provider '{source_type}' is not configured (Status: COMING SOON)")
+
+        new_run_id = f"RUN-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+
+        self.active_context = RunContext(
+            run_id=new_run_id,
+            source_type=DataSourceType(source_type),
+            source_name=provider_info["name"],
+            mode=RunMode(mode),
+            dataset_id=dataset_id or provider_info["dataset_id"],
+            dataset_version=provider_info["dataset_version"],
+            station_count=provider_info["station_count"],
+            observation_count=provider_info["observation_count"],
+            cadence=provider_info["cadence"],
+            ground_truth_available=provider_info["ground_truth_available"],
+            replay_speed=1.0,
+            current_synthetic_time=None,
+            current_observation_index=0,
+            transport=TransportType.WEBSOCKET if mode != "HISTORICAL_ANALYSIS" else TransportType.LOCAL,
+            database_target=f"run_{new_run_id.lower()}",
+            created_at=datetime.now(timezone.utc),
+            status=RunStatus.IDLE,
+            metadata=config or {},
+        )
+        return self.active_context
+

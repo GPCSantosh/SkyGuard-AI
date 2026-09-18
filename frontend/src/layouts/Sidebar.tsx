@@ -69,6 +69,7 @@ export const Sidebar: React.FC = () => {
             }
 
             return (
+<<<<<<< HEAD
               <button
                 key={s.station_id}
                 onClick={() => navigate(`/stations/${s.station_id}`)}
@@ -76,6 +77,15 @@ export const Sidebar: React.FC = () => {
                   isSelected
                     ? 'bg-[#1A2234] text-sky-300 font-bold border-l-2 border-sky-400 pl-1.5'
                     : 'text-[#94A3B8] hover:bg-[#161F30] hover:text-[#F8FAFC]'
+=======
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={`flex items-center gap-3 px-2.5 py-2 rounded text-data font-medium transition-colors ${
+                  isMatch
+                    ? 'bg-surface-2 text-ops-weather border-l-2 border-l-ops-weather'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-hover'
+>>>>>>> 6f03007298457cd197e1278299945efcd0c78dbb
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">

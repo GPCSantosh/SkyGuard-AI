@@ -146,3 +146,16 @@ def get_live_poller():
         )
     return _live_poller
 
+
+_run_context_manager = None
+
+
+def get_run_context_manager() -> RunContextManager:
+    """Get or create singleton RunContextManager."""
+    global _run_context_manager
+    if _run_context_manager is None:
+        from backend.app.core.state import RunContextManager
+        _run_context_manager = RunContextManager()
+    return _run_context_manager
+
+

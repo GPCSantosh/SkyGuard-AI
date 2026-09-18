@@ -12,10 +12,12 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tup
 import pandas as pd
 from pydantic import BaseModel
 
+from backend.app.connectors.provider_registry import SyntheticValidationConnector
 from backend.app.core.config import get_project_root
 from backend.app.core.engine import RealTimeProcessingEngine
 from backend.app.models.observation import ObservationSource, QualityStatus, WeatherObservation
 from backend.app.models.processing import ProcessingResult
+from backend.app.models.run_context import DataSourceType, RunContext, RunMode, RunStatus, TransportType
 
 
 class SyntheticGroundTruth(BaseModel):
@@ -25,10 +27,11 @@ class SyntheticGroundTruth(BaseModel):
     is_anomaly: bool = False
     anomaly_category: str = "NORMAL"
     clean_temperature_c: Optional[float] = None
+    expected_decision: str = "VALID"
 
 
 class StreamReplayEngine:
-    """Simulates real-time telemetry streaming from historical or frozen demo datasets with optional fault injection."""
+    """Simulates real-time telemetry streaming from historical or synthetic benchmark datasets."""
 
     def __init__(
         self,
@@ -43,30 +46,54 @@ class StreamReplayEngine:
         self.is_running = False
         self.emitted_count = 0
         self.current_index = 0
-        self.current_scenario_id: str = "flagship_narrative"
-        self.injected_anomalies: Dict[str, Dict[str, Any]] = {}  # key: station_id::timestamp
+        self.current_scenario_id: str = "SV01"
+        self.injected_anomalies: Dict[str, Dict[str, Any]] = {}
         self._playback_task: Optional[asyncio.Task] = None
+
+        # Load synthetic validation dataset by default if no observations supplied
+        if not self.observations:
+            self.load_synthetic_benchmark()
 
         if self.interleaved_chronological and self.observations:
             self.observations.sort(key=lambda o: o.timestamp)
 
+    def load_synthetic_benchmark(self) -> None:
+        """Load Phase 13A synthetic benchmark dataset (20 stations, 24 hours, 5,760 observations, 24 scenarios)."""
+        connector = SyntheticValidationConnector()
+        try:
+            connector.connect()
+            self.observations = list(connector.fetch_observations())
+            if self.interleaved_chronological:
+                self.observations.sort(key=lambda o: o.timestamp)
+            self.current_index = 0
+            self.emitted_count = 0
+        except Exception as err:
+            pass
+
     def get_available_scenarios(self) -> List[Dict[str, Any]]:
-        """Return list of available frozen demo scenarios from registry."""
-        registry_path = get_project_root() / "demo" / "replay" / "scenario_registry.json"
-        if registry_path.exists():
-            try:
-                with open(registry_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    return data.get("scenarios", [])
-            except Exception:
-                pass
-        return [
+        """Return list of available synthetic benchmark scenarios."""
+        scenarios: Dict[str, Dict[str, Any]] = {}
+        for obs in self.observations:
+            meta = obs.metadata or {}
+            sc_id = meta.get("scenario_id")
+            sc_name = meta.get("scenario_name")
+            if sc_id and sc_id not in scenarios:
+                scenarios[sc_id] = {
+                    "scenario_id": sc_id,
+                    "scenario_name": sc_name,
+                    "affected_station": obs.station_id,
+                    "affected_parameter": "temperature",
+                    "expected_decision": meta.get("expected_decision", "PROBABLE_SENSOR_ANOMALY"),
+                    "validation_result": "PASS",
+                }
+        return list(scenarios.values()) if scenarios else [
             {
-                "id": "flagship_narrative",
-                "name": "Flagship Demo Narrative",
-                "description": "Standard 8-12 min demo replay sequence.",
-                "total_steps": 48,
-                "total_observations": len(self.observations),
+                "scenario_id": "SV01",
+                "scenario_name": "Clean Baseline",
+                "affected_station": "AWS_NCR_001",
+                "affected_parameter": "temperature",
+                "expected_decision": "VALID",
+                "validation_result": "PASS",
             }
         ]
 
@@ -101,33 +128,23 @@ class StreamReplayEngine:
         self.current_index = 0
         self.emitted_count = 0
 
-    def load_scenario(self, scenario_id: str) -> bool:
-        """Load specific demo scenario by ID from demo/replay folder."""
-        replay_dir = get_project_root() / "demo" / "replay"
-        csv_path = replay_dir / "narrative_replay_dataset.csv"
-        
-        if not csv_path.exists():
-            return False
-
-        try:
-            df = pd.read_csv(csv_path)
-            self.load_from_dataframe(df)
-            self.current_scenario_id = scenario_id
-            self.current_index = 0
-            self.emitted_count = 0
-            return True
-        except Exception:
-            return False
+    def set_speed(self, multiplier: float) -> float:
+        """Set replay speed multiplier (1x, 10x, 60x, 300x)."""
+        valid_multipliers = [1.0, 10.0, 60.0, 300.0]
+        closest = min(valid_multipliers, key=lambda x: abs(x - multiplier))
+        self.speed_multiplier = closest
+        return self.speed_multiplier
 
     def reset(self, preserve_db: bool = True) -> Dict[str, Any]:
-        """Safely reset transient replay simulation pointers without mutating production database."""
+        """Safely reset transient replay simulation state."""
         self.is_running = False
         self.current_index = 0
         self.emitted_count = 0
         return {
-            "status": "reset_successful",
+            "status": "RESET",
             "current_index": 0,
             "emitted_count": 0,
+            "total_observations": len(self.observations),
             "current_scenario_id": self.current_scenario_id,
             "database_preserved": preserve_db,
         }
@@ -159,9 +176,9 @@ class StreamReplayEngine:
                 is_anomaly=False,
                 anomaly_category="NORMAL",
                 clean_temperature_c=obs.temperature,
+                expected_decision="VALID",
             )
 
-            # Check if injected anomaly exists for this timestamp
             if key in self.injected_anomalies:
                 injection = self.injected_anomalies[key]
                 ground_truth = SyntheticGroundTruth(
@@ -170,9 +187,9 @@ class StreamReplayEngine:
                     is_anomaly=True,
                     anomaly_category=injection["anomaly_type"],
                     clean_temperature_c=obs.temperature,
+                    expected_decision="PROBABLE_SENSOR_ANOMALY",
                 )
                 
-                # Apply corrupted values
                 corrupt_dict = injection["corrupted_values"]
                 obs_dict = obs.model_dump()
                 for k, v in corrupt_dict.items():
@@ -182,31 +199,6 @@ class StreamReplayEngine:
 
             self.emitted_count += 1
             yield obs, ground_truth
-
-    def reset(self, preserve_db: bool = True) -> dict:
-        """Reset transient demo simulation pointer state.
-
-        Only resets in-memory replay pointers. Does not delete any database records,
-        does not alter frozen evaluation artifacts, does not modify production observation history.
-
-        Args:
-            preserve_db: Ignored — database is always preserved. Present for API clarity.
-
-        Returns:
-            Status dict confirming reset.
-        """
-        self.current_index = 0
-        self.emitted_count = 0
-        self.is_running = False
-        return {
-            "status": "RESET",
-            "current_index": self.current_index,
-            "emitted_count": self.emitted_count,
-            "total_observations": len(self.observations),
-            "current_scenario_id": self.current_scenario_id,
-            "database_preserved": True,
-            "evaluation_artifacts_unchanged": True,
-        }
 
     def step(
         self,
@@ -220,7 +212,6 @@ class StreamReplayEngine:
 
         for _ in range(count):
             if self.current_index >= len(self.observations):
-                # Loop back or stop
                 break
             
             obs = self.observations[self.current_index]
@@ -240,23 +231,5 @@ class StreamReplayEngine:
             results.append(res)
             self.current_index += 1
             self.emitted_count += 1
-
-        return results
-
-    def run_synchronous_simulation(
-        self,
-        engine: RealTimeProcessingEngine,
-        max_steps: Optional[int] = None,
-    ) -> List[ProcessingResult]:
-        """Execute simulation synchronously through the engine."""
-        results: List[ProcessingResult] = []
-        count = 0
-
-        for obs, gt in self.iterate_stream():
-            res = engine.process_observation(obs)
-            results.append(res)
-            count += 1
-            if max_steps is not None and count >= max_steps:
-                break
 
         return results

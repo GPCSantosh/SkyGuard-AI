@@ -28,10 +28,13 @@ class QualityStatus(str, Enum):
 
 class ObservationSource(str, Enum):
     """Origin source for weather telemetry."""
+    SYNTHETIC_VALIDATION = "SYNTHETIC_VALIDATION"
     HISTORICAL_CSV = "HISTORICAL_CSV"
     NOAA_ISD = "NOAA_ISD"
     METEOSTAT = "METEOSTAT"
     OPEN_METEO = "OPEN_METEO"
+    IMD_AWS = "IMD_AWS"
+    VISUAL_CROSSING = "VISUAL_CROSSING"
     SIMULATOR = "SIMULATOR"
     WEATHER_API = "WEATHER_API"
     MQTT = "MQTT"
@@ -142,6 +145,27 @@ class WeatherObservation(BaseModel):
     is_synthetic: bool = Field(
         default=False,
         description="Flag indicating whether observation is simulated/interpolated"
+    )
+    # Explicit Run Context & Provenance Tags
+    run_id: Optional[str] = Field(
+        default=None,
+        description="Identifier of the execution run context"
+    )
+    source_type: Optional[str] = Field(
+        default=None,
+        description="Canonical source type (e.g. SYNTHETIC_VALIDATION, HISTORICAL_CSV, OPEN_METEO)"
+    )
+    source_name: Optional[str] = Field(
+        default=None,
+        description="Human readable name of the source provider"
+    )
+    dataset_id: Optional[str] = Field(
+        default=None,
+        description="Identifier of the dataset"
+    )
+    dataset_version: Optional[str] = Field(
+        default=None,
+        description="Version string of the dataset or connector"
     )
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
