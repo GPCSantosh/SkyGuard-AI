@@ -1,0 +1,1822 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SkyGuard AI — Meteorological Data Quality & Anomaly Detection API",
+    "description": "REST API for Automatic Weather Station telemetry, quality control, and sensor health.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Health Probes"
+        ],
+        "summary": "Process Liveness Probe",
+        "description": "Process liveness probe indicating whether the server process is alive and responsive.",
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Live Health Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Health Probes"
+        ],
+        "summary": "Service Readiness Probe",
+        "description": "Readiness probe evaluating the operational state of core subsystems and dependencies.\n\nReturns HTTP 200 when ready to accept traffic.\nReturns HTTP 503 only when core internal state is uninitialized or critically blocked.",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Ready Health Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stations": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "List Stations",
+        "description": "List all configured Automatic Weather Stations with coordinates and status.",
+        "operationId": "list_stations_api_v1_stations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Stations Api V1 Stations Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stations/{station_id}": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "Get Station",
+        "description": "Get metadata for a specific station.",
+        "operationId": "get_station_api_v1_stations__station_id__get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Station Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Station Api V1 Stations  Station Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stations/{station_id}/latest": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "Get Station Latest",
+        "description": "Get real-time operational status snapshot for a station.",
+        "operationId": "get_station_latest_api_v1_stations__station_id__latest_get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Station Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveStationSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stations/{station_id}/history": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "Get Station History",
+        "description": "Get chronological observation telemetry for a station with filters and pagination.",
+        "operationId": "get_station_history_api_v1_stations__station_id__history_get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Station Id"
+            }
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO start time filter",
+              "title": "Start Time"
+            },
+            "description": "ISO start time filter"
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO end time filter",
+              "title": "End Time"
+            },
+            "description": "ISO end time filter"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Page offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Page offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_WeatherObservation_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stations/{station_id}/health": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "Get Station Health",
+        "description": "Get latest continuous 0-100 Sensor Health evaluation for a station.",
+        "operationId": "get_station_health_api_v1_stations__station_id__health_get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Station Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SensorHealthSummary"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Station Health Api V1 Stations  Station Id  Health Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/anomalies": {
+      "get": {
+        "tags": [
+          "Anomalies & Alerts"
+        ],
+        "summary": "List Anomalies",
+        "description": "List detected anomalies with multi-criteria filtering and pagination.",
+        "operationId": "list_anomalies_api_v1_anomalies_get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by station ID",
+              "title": "Station Id"
+            },
+            "description": "Filter by station ID"
+          },
+          {
+            "name": "decision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by hybrid decision (e.g. PROBABLE_SENSOR_ANOMALY)",
+              "title": "Decision"
+            },
+            "description": "Filter by hybrid decision (e.g. PROBABLE_SENSOR_ANOMALY)"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by severity (e.g. HIGH, CRITICAL)",
+              "title": "Severity"
+            },
+            "description": "Filter by severity (e.g. HIGH, CRITICAL)"
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start timestamp filter",
+              "title": "Start Time"
+            },
+            "description": "Start timestamp filter"
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End timestamp filter",
+              "title": "End Time"
+            },
+            "description": "End timestamp filter"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Page offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Page offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_AnomalyEventRecord_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/anomalies/{event_id}": {
+      "get": {
+        "tags": [
+          "Anomalies & Alerts"
+        ],
+        "summary": "Get Anomaly Detail",
+        "description": "Get single anomaly event record by its unique event ID.",
+        "operationId": "get_anomaly_detail_api_v1_anomalies__event_id__get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomalyEventRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/anomalies/{event_id}/explanation": {
+      "get": {
+        "tags": [
+          "Anomalies & Alerts"
+        ],
+        "summary": "Get Anomaly Explanation",
+        "description": "Get complete Explainability package (SHAP attributions, neighbor comparison, SOP steps).",
+        "operationId": "get_anomaly_explanation_api_v1_anomalies__event_id__explanation_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplanationSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/corrections": {
+      "get": {
+        "tags": [
+          "Correction Review"
+        ],
+        "summary": "List Corrections",
+        "description": "List advisory correction recommendations with multi-field filtering and pagination.",
+        "operationId": "list_corrections_api_v1_corrections_get",
+        "parameters": [
+          {
+            "name": "station_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by station ID",
+              "title": "Station Id"
+            },
+            "description": "Filter by station ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by recommendation status (e.g. REVIEW_RECOMMENDED)",
+              "title": "Status"
+            },
+            "description": "Filter by recommendation status (e.g. REVIEW_RECOMMENDED)"
+          },
+          {
+            "name": "target_variable",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by variable (e.g. temperature_c)",
+              "title": "Target Variable"
+            },
+            "description": "Filter by variable (e.g. temperature_c)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Items per page",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Page offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Page offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_CorrectionRecommendation_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/corrections/{observation_id}": {
+      "get": {
+        "tags": [
+          "Correction Review"
+        ],
+        "summary": "Get Correction Detail",
+        "description": "Get single advisory correction recommendation record by its observation ID.",
+        "operationId": "get_correction_detail_api_v1_corrections__observation_id__get",
+        "parameters": [
+          {
+            "name": "observation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Observation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionRecommendation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/observations/process": {
+      "post": {
+        "tags": [
+          "Observations & Ingestion"
+        ],
+        "summary": "Process Single Observation",
+        "description": "Ingest and process a single WeatherObservation through the full analytical intelligence pipeline.",
+        "operationId": "process_single_observation_api_v1_observations_process_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherObservation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessingResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/observations/batch": {
+      "post": {
+        "tags": [
+          "Observations & Ingestion"
+        ],
+        "summary": "Process Observation Batch",
+        "description": "Process a sequential batch of WeatherObservations.",
+        "operationId": "process_observation_batch_api_v1_observations_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/WeatherObservation"
+                },
+                "type": "array",
+                "title": "Observations"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProcessingResult"
+                  },
+                  "type": "array",
+                  "title": "Response Process Observation Batch Api V1 Observations Batch Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/health": {
+      "get": {
+        "tags": [
+          "System Observability"
+        ],
+        "summary": "Get System Health",
+        "description": "Get end-to-end service status of all core subsystems (database, model, pipeline, replay).",
+        "operationId": "get_system_health_api_v1_system_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay/status": {
+      "get": {
+        "tags": [
+          "Replay Simulator"
+        ],
+        "summary": "Get Replay Status",
+        "description": "Get current status of the stream replay simulator.",
+        "operationId": "get_replay_status_api_v1_replay_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Replay Status Api V1 Replay Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay/scenarios": {
+      "get": {
+        "tags": [
+          "Replay Simulator"
+        ],
+        "summary": "List Replay Scenarios",
+        "description": "List all available frozen demonstration scenarios.",
+        "operationId": "list_replay_scenarios_api_v1_replay_scenarios_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Replay Scenarios Api V1 Replay Scenarios Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay/load-scenario": {
+      "post": {
+        "tags": [
+          "Replay Simulator"
+        ],
+        "summary": "Load Replay Scenario",
+        "description": "Load a specific demonstration scenario from the registry.",
+        "operationId": "load_replay_scenario_api_v1_replay_load_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Load Replay Scenario Api V1 Replay Load Scenario Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay/step": {
+      "post": {
+        "tags": [
+          "Replay Simulator"
+        ],
+        "summary": "Step Replay Simulation",
+        "description": "Step the replay simulation forward by N observations.",
+        "operationId": "step_replay_simulation_api_v1_replay_step_post",
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Count"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Step Replay Simulation Api V1 Replay Step Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replay/reset": {
+      "post": {
+        "tags": [
+          "Replay Simulator"
+        ],
+        "summary": "Reset Replay Simulation",
+        "description": "Reset transient demo simulation state without destructive database operations.",
+        "operationId": "reset_replay_simulation_api_v1_replay_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Reset Replay Simulation Api V1 Replay Reset Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/source-health": {
+      "get": {
+        "tags": [
+          "Live Source Operations"
+        ],
+        "summary": "Get Live Source Health",
+        "description": "Get comprehensive operational health, request metrics, outage episodes, and station freshness matrix.",
+        "operationId": "get_live_source_health_api_v1_live_source_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Live Source Health Api V1 Live Source Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/status": {
+      "get": {
+        "tags": [
+          "Live Source Operations"
+        ],
+        "summary": "Get Live Status",
+        "description": "Get high-level status indicator for navigation badges and operational overview.",
+        "operationId": "get_live_status_api_v1_live_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Live Status Api V1 Live Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/poll-now": {
+      "post": {
+        "tags": [
+          "Live Source Operations"
+        ],
+        "summary": "Trigger Immediate Poll",
+        "description": "Trigger an immediate synchronous poll cycle across all configured stations.",
+        "operationId": "trigger_immediate_poll_api_v1_live_poll_now_post",
+        "parameters": [
+          {
+            "name": "X-Operational-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operational-Key"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Trigger Immediate Poll Api V1 Live Poll Now Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Basic service liveness probe.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "Root",
+        "description": "Root endpoint providing service metadata.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnomalyEventRecord": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id",
+            "description": "Stable unique identifier, e.g. ANOM-20260917-STN001-0001"
+          },
+          "station_id": {
+            "type": "string",
+            "title": "Station Id",
+            "description": "Station identifier"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO 8601 observation timestamp"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/HybridDecisionType",
+            "description": "Hybrid operational decision"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "description": "Alert severity level (INFO, LOW, MEDIUM, HIGH, CRITICAL)"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes",
+            "description": "Triggered reason codes"
+          },
+          "observed_values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Observed Values",
+            "description": "Observed parameter readings"
+          },
+          "recommended_values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Recommended Values",
+            "description": "Recommended repair values"
+          },
+          "explanation_summary": {
+            "type": "string",
+            "title": "Explanation Summary",
+            "description": "Natural language operator summary"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "station_id",
+          "timestamp",
+          "decision",
+          "severity",
+          "explanation_summary"
+        ],
+        "title": "AnomalyEventRecord",
+        "description": "Traceable anomaly event record persisted upon detection."
+      },
+      "AuditMetadata": {
+        "properties": {
+          "model_version": {
+            "type": "string",
+            "title": "Model Version",
+            "description": "Identifier of the anomaly model.",
+            "default": "isolation_forest_v1"
+          },
+          "feature_version": {
+            "type": "string",
+            "title": "Feature Version",
+            "description": "Feature engineering pipeline version.",
+            "default": "v1.0.0"
+          },
+          "decision_engine_version": {
+            "type": "string",
+            "title": "Decision Engine Version",
+            "description": "Hybrid decision engine version.",
+            "default": "hybrid_v1.0.0"
+          },
+          "explanation_engine_version": {
+            "type": "string",
+            "title": "Explanation Engine Version",
+            "description": "Explainability engine version.",
+            "default": "xai_v1.0.0"
+          },
+          "explanation_method": {
+            "type": "string",
+            "title": "Explanation Method",
+            "description": "Method used to compute feature contributions.",
+            "default": "TREE_SHAP"
+          },
+          "input_station_id": {
+            "type": "string",
+            "title": "Input Station Id",
+            "description": "Station ID evaluated."
+          },
+          "input_timestamp": {
+            "type": "string",
+            "title": "Input Timestamp",
+            "description": "Observation timestamp evaluated."
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "UTC timestamp when explanation was produced."
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_station_id",
+          "input_timestamp"
+        ],
+        "title": "AuditMetadata",
+        "description": "Traceable provenance metadata for reproducible auditability."
+      },
+      "ComponentHealthScores": {
+        "properties": {
+          "anomaly_health": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Anomaly Health",
+            "description": "Health deduced from anomalous event frequency.",
+            "default": 100.0
+          },
+          "data_quality_health": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Data Quality Health",
+            "description": "Health deduced from missingness and schema validity.",
+            "default": 100.0
+          },
+          "communication_health": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Communication Health",
+            "description": "Health deduced from packet gaps and telemetry latency.",
+            "default": 100.0
+          },
+          "temporal_stability_health": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Temporal Stability Health",
+            "description": "Health deduced from flatlines and variance behavior.",
+            "default": 100.0
+          },
+          "spatial_consistency_health": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Spatial Consistency Health",
+            "description": "Health deduced from isolated spatial disagreements.",
+            "default": 100.0
+          }
+        },
+        "type": "object",
+        "title": "ComponentHealthScores",
+        "description": "Component reliability indicators across 5 distinct sub-domains (0-100 scale)."
+      },
+      "ContributionDirection": {
+        "type": "string",
+        "enum": [
+          "increases_anomaly",
+          "decreases_anomaly",
+          "neutral"
+        ],
+        "title": "ContributionDirection",
+        "description": "Direction of a feature's contribution towards anomaly classification."
+      },
+      "CorrectionAuditMetadata": {
+        "properties": {
+          "imputation_engine_version": {
+            "type": "string",
+            "title": "Imputation Engine Version",
+            "description": "Version of imputation layer.",
+            "default": "imputation_v1.0.0"
+          },
+          "decision_engine_version": {
+            "type": "string",
+            "title": "Decision Engine Version",
+            "description": "Version of hybrid decision engine.",
+            "default": "hybrid_v1.0.0"
+          },
+          "explanation_engine_version": {
+            "type": "string",
+            "title": "Explanation Engine Version",
+            "description": "Version of explainability engine.",
+            "default": "xai_v1.0.0"
+          },
+          "health_engine_version": {
+            "type": "string",
+            "title": "Health Engine Version",
+            "description": "Version of sensor health engine.",
+            "default": "health_v1.0.0"
+          },
+          "spatial_engine_version": {
+            "type": "string",
+            "title": "Spatial Engine Version",
+            "description": "Version of spatial topology engine.",
+            "default": "spatial_v1.0.0"
+          },
+          "is_causal_mode": {
+            "type": "boolean",
+            "title": "Is Causal Mode",
+            "description": "Causality guarantee flag.",
+            "default": true
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "UTC timestamp of generation."
+          }
+        },
+        "type": "object",
+        "title": "CorrectionAuditMetadata",
+        "description": "Complete provenance and model tracking for correction recommendations."
+      },
+      "CorrectionRecommendation": {
+        "properties": {
+          "observation_id": {
+            "type": "string",
+            "title": "Observation Id",
+            "description": "Unique hash/identifier of target observation."
+          },
+          "station_id": {
+            "type": "string",
+            "title": "Station Id",
+            "description": "Target AWS station identifier."
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO 8601 timestamp of the observation."
+          },
+          "target_variable": {
+            "type": "string",
+            "title": "Target Variable",
+            "description": "Meteorological parameter evaluated (e.g. 'temperature_c')."
+          },
+          "observed_value": {
+            "type": "number",
+            "title": "Observed Value",
+            "description": "Raw observed value from sensor (remains immutable)."
+          },
+          "recommended_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Value",
+            "description": "Model-derived recommended estimate."
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecommendationStatus",
+            "description": "Actionable recommendation tier."
+          },
+          "method": {
+            "$ref": "#/components/schemas/EstimationMethod",
+            "description": "Algorithm used to derive the recommended estimate."
+          },
+          "decision_type": {
+            "type": "string",
+            "title": "Decision Type",
+            "description": "Upstream hybrid decision (e.g. PROBABLE_SENSOR_ANOMALY)."
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes",
+            "description": "Reason codes from upstream decision engine."
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence",
+            "description": "Direct and contextual evidence items."
+          },
+          "uncertainty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UncertaintyEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Uncertainty quantification of recommendation."
+          },
+          "multivariate_consistent": {
+            "type": "boolean",
+            "title": "Multivariate Consistent",
+            "description": "True if recommended value satisfies joint physical laws.",
+            "default": true
+          },
+          "station_health_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Health Score",
+            "description": "Upstream Sensor Health Index (0-100)."
+          },
+          "station_health_band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Health Band",
+            "description": "Upstream Sensor Health Status Band."
+          },
+          "operator_summary": {
+            "type": "string",
+            "title": "Operator Summary",
+            "description": "Scientific, operator-facing natural language explanation."
+          },
+          "audit_metadata": {
+            "$ref": "#/components/schemas/CorrectionAuditMetadata"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "UTC creation timestamp."
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_id",
+          "station_id",
+          "timestamp",
+          "target_variable",
+          "observed_value",
+          "status",
+          "method",
+          "decision_type",
+          "operator_summary"
+        ],
+        "title": "CorrectionRecommendation",
+        "description": "Strictly separated non-destructive correction recommendation for a suspicious observation."
+      },
+      "DataQualityEvidence": {
+        "properties": {
+          "quality_status": {
+            "type": "string",
+            "title": "Quality Status",
+            "description": "High-level ingestion status (VALID, REJECTED, GAP, DUPLICATE).",
+            "default": "VALID"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Fields",
+            "description": "List of missing required meteorological fields."
+          },
+          "communication_gap_minutes": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Communication Gap Minutes",
+            "description": "Elapsed time since previous packet."
+          },
+          "is_duplicate": {
+            "type": "boolean",
+            "title": "Is Duplicate",
+            "description": "True if timestamp/payload is duplicate.",
+            "default": false
+          },
+          "is_out_of_order": {
+            "type": "boolean",
+            "title": "Is Out Of Order",
+            "description": "True if packet arrived out of chronological sequence.",
+            "default": false
+          },
+          "is_physical_out_of_bounds": {
+            "type": "boolean",
+            "title": "Is Physical Out Of Bounds",
+            "description": "True if raw value exceeds planetary limits.",
+            "default": false
+          },
+          "evidence_state": {
+            "$ref": "#/components/schemas/EvidenceState",
+            "description": "Evidence alignment for data defect.",
+            "default": "NEUTRAL"
+          }
+        },
+        "type": "object",
+        "title": "DataQualityEvidence",
+        "description": "Evidence derived from telemetry integrity, schemas, and communication checks."
+      },
+      "DecisionExplanation": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Concise multi-sentence explanation of decision."
+          },
+          "reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionReasonCode"
+            },
+            "type": "array",
+            "title": "Reason Codes",
+            "description": "Triggered reason codes."
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence",
+            "description": "Subsystems supporting the decision."
+          },
+          "contradicting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradicting Evidence",
+            "description": "Subsystems contradicting or ruling out alternatives."
+          },
+          "unavailable_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unavailable Evidence",
+            "description": "Subsystems with missing or insufficient telemetry."
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary"
+        ],
+        "title": "DecisionExplanation",
+        "description": "Structured, human-readable and machine-traceable explanation of decision rationale."
+      },
+      "DecisionReasonCode": {
+        "type": "string",
+        "enum": [
+          "NOMINAL_OBSERVATION",
+          "DATA_GAP",
+          "DUPLICATE_TIMESTAMP",
+          "OUT_OF_ORDER_TIMESTAMP",
+          "MISSING_REQUIRED_VARIABLES",
+          "OUT_OF_RANGE_PHYSICAL",
+          "PERSISTENT_VALUE",
+          "RAPID_RATE_OF_CHANGE",
+          "MULTIVARIATE_DEVIATION",
+          "ML_HIGH_ANOMALY_SCORE",
+          "ML_MODERATE_ANOMALY_SCORE",
+          "LOCAL_SPATIAL_ISOLATION",
+          "REGIONAL_SPATIAL_AGREEMENT",
+          "LOCAL_CLUSTER_AGREEMENT",
+          "INSUFFICIENT_SPATIAL_CONTEXT",
+          "CONFLICTING_EVIDENCE",
+          "MIXED_REGIONAL_EVENT_WITH_LOCAL_EXCESS"
+        ],
+        "title": "DecisionReasonCode",
+        "description": "Stable, machine-readable reason codes explaining decision triggers."
+      },
+      "DecisionSeverity": {
+        "type": "string",
+        "enum": [
+          "INFO",
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "CRITICAL"
+        ],
+        "title": "DecisionSeverity",
+        "description": "Operational alert severity level."
+      },
+      "EstimationMethod": {
+        "type": "string",
+        "enum": [
+          "CAUSAL_TEMPORAL_INTERPOLATION",
+          "RETROSPECTIVE_INTERPOLATION",
+          "SPATIAL_IDW_CONSENSUS",
+          "NEIGHBOR_WEIGHTED_MEDIAN",
+          "ROLLING_BASELINE",
+          "COMBINED_TEMPORAL_SPATIAL",
+          "NO_ESTIMATE"
+        ],
+        "title": "EstimationMethod",
+        "description": "Mathematical and algorithmic methods used for estimation."
+      },
+      "EvidenceHierarchy": {
+        "properties": {
+          "direct_evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Direct Evidence",
+            "description": "Direct physical sensor readings, timestamps, and raw neighbor values."
+          },
+          "model_evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Model Evidence",
+            "description": "ML anomaly score, decision score, calibrated threshold, and top feature attributions."
+          },
+          "contextual_evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contextual Evidence",
+            "description": "Spatial network consensus, temporal dynamics (rate, flatline), and multivariate physics."
+          },
+          "operational_interpretation": {
+            "type": "string",
+            "title": "Operational Interpretation",
+            "description": "High-level operational interpretation (e.g., 'probable sensor anomaly', 'possible regional event')."
+          }
+        },
+        "type": "object",
+        "required": [
+          "operational_interpretation"
+        ],
+        "title": "EvidenceHierarchy",
+        "description": "Structured taxonomy separating direct, model, contextual, and operational evidence."
+      },
+      "EvidenceState": {
+        "type": "string",
+        "enum": [
+          "SUPPORTS",
+          "CONTRADICTS",
+          "NEUTRAL",
+          "UNAVAILABLE"
+        ],
+        "title": "EvidenceState",
+        "description": "Standardized alignment of a specific subsystem evidence source relative to a hypothesis."
+      },
+      "ExplanationSummary": {
+        "properties": {
+          "station_id": {
+            "type": "string",
+            "title": "Station Id",
+            "description": "Target AWS station identifier."
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO 8601 observation timestamp."
+          },
+          "decision": {
+            "$ref": "#/components/schemas/HybridDecisionType",
+            "description": "Hybrid operational decision."
+          },
+          "severity": {
+            "$ref": "#/components/schemas/DecisionSeverity",
+            "description": "Operational urgency severity."
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Deterministic, operator-readable explanation of decision."
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence",
+            "description": "Subsystem evidence supporting decision."
+          },
+          "contradicting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradicting Evidence",
+            "description": "Evidence ruling out alternative causes."
+          },
+          "unavailable_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unavailable Evidence",
+            "description": "Subsystems with missing/sparse context."
+          },
+          "feature_contributions": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureContribution"
+            },
+            "type": "array",
+            "title": "Feature Contributions",
+            "description": "Ranked ML feature attributions from actual model."
+          },
+          "spatial_evidence": {
+            "$ref": "#/components/schemas/SpatialEvidence"
+          },
+          "temporal_evidence": {
+            "$ref": "#/components/schemas/TemporalEvidence"
+          },
+          "data_quality_evidence": {
+            "$ref": "#/components/schemas/DataQualityEvidence"
+          },
+          "multivariate_evidence": {
+            "$ref": "#/components/schemas/MultivariateEvidence"
+          }
+        }
+      }
+    }
+  }
+}
